@@ -1,0 +1,153 @@
+/* カレンダー全体のスタイル調整 */
+.custom-calendar {
+  width: 100% !important;
+  max-width: 100% !important;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  font-size: 0.8rem !important;
+}
+
+/* 日付タイルのスタイル */
+.calendar-tile {
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 4px !important;
+  margin: 1px !important;
+  padding: 0 !important;
+  position: relative !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: flex-start !important;
+  align-items: center !important;
+  background-color: #f8fafc !important;
+  transition: background-color 0.2s ease !important;
+}
+
+.calendar-tile:hover {
+  background-color: #e2e8f0 !important;
+}
+
+/* 日付を上部に配置 */
+.react-calendar__tile abbr {
+  position: absolute !important;
+  top: 2px !important;
+  left: 2px !important;
+  font-size: 0.7rem !important;
+  font-weight: 500 !important;
+}
+
+/* イベントコンテンツのスタイル */
+.calendar-tile-content {
+  width: 100% !important;
+  height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  align-items: center !important;
+  padding-top: 10px !important; /* 日付の下にコンテンツが表示されるようにパディング */
+}
+
+/* 今日の日付のスタイル強調 */
+.react-calendar__tile--now {
+  background-color: #dbeafe !important;
+  border: 1px solid #3b82f6 !important;
+}
+
+/* 選択された日付のスタイル */
+.react-calendar__tile--active {
+  background-color: #bfdbfe !important;
+  border: 1px solid #2563eb !important;
+  color: #1e40af !important;
+}
+
+/* 曜日ヘッダーのスタイル */
+.react-calendar__month-view__weekdays {
+  font-weight: bold !important;
+  background-color: #f1f5f9 !important;
+  border-radius: 4px !important;
+  font-size: 0.7rem !important;
+}
+
+.react-calendar__month-view__weekdays abbr {
+  text-decoration: none !important;
+}
+
+/* ナビゲーションボタンのスタイル改善 */
+.react-calendar__navigation {
+  margin-bottom: 0.5rem !important;
+}
+
+.react-calendar__navigation button {
+  font-size: 0.9rem !important;
+  padding: 4px !important;
+  border-radius: 4px !important;
+  margin: 1px !important;
+}
+
+/* 小型デバイス対応 - 大きくする */
+@media (max-width: 640px) {
+  .custom-calendar {
+    font-size: 0.8rem !important;
+  }
+
+  .react-calendar__tile abbr {
+    font-size: 0.7rem !important;
+    top: 2px !important;
+    left: 2px !important;
+  }
+
+  .calendar-tile-content {
+    padding-top: 10px !important;
+  }
+
+  .react-calendar__navigation button {
+    font-size: 0.85rem !important;
+    padding: 3px !important;
+  }
+
+  .react-calendar__month-view__weekdays {
+    font-size: 0.7rem !important;
+  }
+}
+
+/* タブレット対応 */
+@media (min-width: 641px) and (max-width: 1023px) {
+  .custom-calendar {
+    font-size: 0.85rem !important;
+  }
+
+  .react-calendar__tile abbr {
+    font-size: 0.75rem !important;
+    top: 2px !important;
+    left: 2px !important;
+  }
+
+  .calendar-tile-content {
+    padding-top: 12px !important;
+  }
+}
+
+/* デスクトップ対応 - 小さくする */
+@media (min-width: 1024px) {
+  .custom-calendar {
+    font-size: 0.85rem !important;
+  }
+
+  .react-calendar__tile abbr {
+    font-size: 0.75rem !important;
+    top: 2px !important;
+    left: 2px !important;
+  }
+
+  .calendar-tile-content {
+    padding-top: 14px !important;
+  }
+
+  .react-calendar__month-view__weekdays {
+    font-size: 0.75rem !important;
+  }
+
+  .react-calendar__navigation button {
+    font-size: 0.9rem !important;
+  }
+}
