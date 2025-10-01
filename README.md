@@ -5,33 +5,39 @@ Time Treeライクなカレンダー共有アプリです。Next.js + Supabase�
 ## 🚀 セットアップ
 
 ### 1. プロジェクトのクローン
+
 ```bash
 git clone [repository-url]
 cd next-calender-app
 ```
 
 ### 2. 依存関係のインストール
+
 ```bash
 npm install
 ```
 
 ### 3. 環境変数の設定
+
 ```bash
 # .env.exampleを.envにコピー
 cp .env.example .env
 ```
 
 `.env`ファイルを編集して、Supabaseプロジェクトの情報を設定してください：
+
 - `NEXT_PUBLIC_SUPABASE_URL`: SupabaseプロジェクトURL
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Supabase anon key
 - `SUPABASE_SERVICE_ROLE_KEY`: Supabase service role key
 
 ### 4. Supabaseデータベースの設定
+
 1. [Supabase](https://supabase.com)でプロジェクトを作成
 2. SQL Editorで`supabase/schema.sql`を実行
 3. リアルタイム機能を有効化（events, calendars, notifications, calendar_membersテーブル）
 
 ### 5. 開発サーバーの起動
+
 ```bash
 npm run dev
 ```
