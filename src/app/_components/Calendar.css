@@ -1,153 +1,392 @@
-/* カレンダー全体のスタイル調整 */
-.custom-calendar {
-  width: 100% !important;
-  max-width: 100% !important;
-  background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  font-size: 0.8rem !important;
+/* FullCalendar Custom Styles */
+
+/* FullCalendar コンテナのスタイル */
+.fullcalendar-container {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
 }
 
-/* 日付タイルのスタイル */
-.calendar-tile {
-  border: 1px solid #e2e8f0 !important;
-  border-radius: 4px !important;
-  margin: 1px !important;
-  padding: 0 !important;
-  position: relative !important;
-  display: flex !important;
-  flex-direction: column !important;
-  justify-content: flex-start !important;
-  align-items: center !important;
-  background-color: #f8fafc !important;
-  transition: background-color 0.2s ease !important;
-}
-
-.calendar-tile:hover {
-  background-color: #e2e8f0 !important;
-}
-
-/* 日付を上部に配置 */
-.react-calendar__tile abbr {
-  position: absolute !important;
-  top: 2px !important;
-  left: 2px !important;
-  font-size: 0.7rem !important;
-  font-weight: 500 !important;
-}
-
-/* イベントコンテンツのスタイル */
-.calendar-tile-content {
-  width: 100% !important;
+/* FullCalendar 全体のスタイル */
+.fc {
+  font-family:
+    "Inter",
+    -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
+  font-size: 0.875rem;
+  width: 100%;
   height: 100% !important;
+}
+
+/* ヘッダーツールバーのスタイル */
+.fc-header-toolbar {
+  margin-bottom: 0.5rem !important;
   display: flex !important;
-  flex-direction: column !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  gap: 0.5rem;
+}
+
+.fc-toolbar-chunk {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.fc-toolbar-chunk:first-child {
+  justify-content: flex-start;
+}
+
+.fc-toolbar-chunk:nth-child(2) {
+  justify-content: center;
+  flex: 1;
+}
+
+.fc-toolbar-chunk:last-child {
+  justify-content: flex-end;
+}
+
+/* ボタンのスタイル */
+.fc-button {
+  background-color: #3b82f6 !important;
+  border-color: #3b82f6 !important;
+  color: white !important;
+  font-size: 0.75rem !important;
+  padding: 0.25rem 0.5rem !important;
+  border-radius: 0.375rem !important;
+  font-weight: 500 !important;
+  transition: all 0.2s ease !important;
+}
+
+.fc-button:hover {
+  background-color: #2563eb !important;
+  border-color: #2563eb !important;
+}
+
+.fc-button:focus {
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5) !important;
+}
+
+.fc-button-active {
+  background-color: #1d4ed8 !important;
+  border-color: #1d4ed8 !important;
+}
+
+/* タイトルのスタイル */
+.fc-toolbar-title {
+  font-size: 1.125rem !important;
+  font-weight: 600 !important;
+  color: #1f2937;
+  margin: 0 0.5rem;
+}
+
+/* カレンダーグリッドのスタイル */
+.fc-theme-standard td,
+.fc-theme-standard th {
+  border-color: #e5e7eb !important;
+  border-width: 1px !important;
+  border-style: solid !important;
+}
+
+/* テーブルレイアウト修正 */
+.fc-scrollgrid {
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+  width: 100% !important;
+  border: 1px solid #e5e7eb !important;
+}
+
+.fc-scrollgrid-sync-table {
+  width: 100% !important;
+  border-collapse: collapse !important;
+}
+
+.fc-col-header,
+.fc-daygrid-body {
+  width: 100% !important;
+}
+
+/* 各列の幅を均等に */
+.fc-col-header-cell,
+.fc-daygrid-day {
+  width: 14.2857% !important; /* 100% / 7 */
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+  border-right: 1px solid #e5e7eb !important;
+  border-bottom: 1px solid #e5e7eb !important;
+}
+
+/* 最右列のボーダー確保 */
+.fc-col-header-cell:last-child,
+.fc-daygrid-day:last-child {
+  border-right: 1px solid #e5e7eb !important;
+}
+
+/* 最下行のボーダー確保 */
+.fc-daygrid-day-frame {
+  border: none !important;
+}
+
+/* スクロール禁止 */
+.fc-view-harness {
+  overflow: hidden !important;
+}
+
+.fc-scroller {
+  overflow: hidden !important;
+}
+
+.fc-scroller-liquid-absolute {
+  overflow: hidden !important;
+}
+
+/* 日付セルのスタイル */
+.fc-daygrid-day {
+  height: 80px !important;
+  min-height: 70px !important;
+  width: 14.2857% !important;
+  box-sizing: border-box !important;
+}
+
+.fc-daygrid-day-frame {
+  height: 100% !important;
+  display: flex;
+  flex-direction: column;
+}
+
+.fc-daygrid-day-top {
+  flex-shrink: 0;
+}
+
+.fc-daygrid-day-events {
+  flex: 1;
+  overflow: hidden;
+}
+
+.fc-daygrid-day-number {
+  color: #374151;
+  font-weight: 500;
+  text-decoration: none !important;
+  padding: 0.25rem;
+  font-size: 0.7rem !important;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  text-align: center;
+}
+
+.fc-day-today {
+  background-color: #dbeafe !important;
+  border: 2px solid #3b82f6 !important;
+  position: relative;
+}
+
+.fc-day-today::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(59, 130, 246, 0.1) 0%,
+    rgba(59, 130, 246, 0.05) 100%
+  );
+  border-radius: 4px;
+  pointer-events: none;
+}
+
+.fc-day-today .fc-daygrid-day-number {
+  color: #374151;
+  border-radius: 6px;
+  width: 100%;
+  height: auto;
+  display: flex !important;
   justify-content: center !important;
   align-items: center !important;
-  padding-top: 10px !important; /* 日付の下にコンテンツが表示されるようにパディング */
-}
-
-/* 今日の日付のスタイル強調 */
-.react-calendar__tile--now {
-  background-color: #dbeafe !important;
-  border: 1px solid #3b82f6 !important;
-}
-
-/* 選択された日付のスタイル */
-.react-calendar__tile--active {
-  background-color: #bfdbfe !important;
-  border: 1px solid #2563eb !important;
-  color: #1e40af !important;
+  padding: 0.25rem;
+  margin: 0;
+  font-weight: 600;
+  font-size: 0.7rem !important;
+  text-align: center !important;
 }
 
 /* 曜日ヘッダーのスタイル */
-.react-calendar__month-view__weekdays {
-  font-weight: bold !important;
-  background-color: #f1f5f9 !important;
-  border-radius: 4px !important;
-  font-size: 0.7rem !important;
+.fc-col-header-cell {
+  background-color: #f9fafb !important;
+  font-weight: 600 !important;
+  color: #374151 !important;
+  padding: 0.4rem 0.2rem !important;
+  border-bottom: 2px solid #e5e7eb !important;
+  font-size: 0.75rem !important;
+  text-align: center !important;
+  width: 14.2857% !important;
+  box-sizing: border-box !important;
 }
 
-.react-calendar__month-view__weekdays abbr {
-  text-decoration: none !important;
+/* イベントのスタイル */
+.fc-event {
+  border-radius: 0.25rem !important;
+  border: none !important;
+  font-size: 0.65rem !important;
+  font-weight: 500 !important;
+  margin: 1px !important;
+  padding: 1px 3px !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-/* ナビゲーションボタンのスタイル改善 */
-.react-calendar__navigation {
-  margin-bottom: 0.5rem !important;
+.fc-event:hover {
+  opacity: 0.8 !important;
+  transform: translateY(-1px) !important;
 }
 
-.react-calendar__navigation button {
-  font-size: 0.9rem !important;
-  padding: 4px !important;
-  border-radius: 4px !important;
+.fc-event-title {
+  font-weight: 500 !important;
+}
+
+/* 週/日表示でのイベントスタイル */
+.fc-timegrid-event {
+  border-radius: 0.25rem !important;
   margin: 1px !important;
 }
 
-/* 小型デバイス対応 - 大きくする */
+/* "more" リンクのスタイル */
+.fc-daygrid-more-link {
+  color: #6b7280 !important;
+  font-size: 0.65rem !important;
+  font-weight: 500 !important;
+}
+
+.fc-daygrid-more-link:hover {
+  color: #3b82f6 !important;
+}
+
+/* 時間軸のスタイル */
+.fc-timegrid-slot-label {
+  font-size: 0.7rem !important;
+  color: #6b7280 !important;
+}
+
+.fc-timegrid-axis {
+  background-color: #f9fafb !important;
+}
+
+/* リスト表示のスタイル */
+.fc-list-event:hover {
+  background-color: #f3f4f6 !important;
+}
+
+.fc-list-event-title {
+  font-weight: 500 !important;
+}
+
+/* レスポンシブデザイン */
 @media (max-width: 640px) {
-  .custom-calendar {
-    font-size: 0.8rem !important;
+  .fc-header-toolbar {
+    margin-bottom: 0.25rem !important;
+    gap: 0.25rem;
   }
 
-  .react-calendar__tile abbr {
-    font-size: 0.7rem !important;
-    top: 2px !important;
-    left: 2px !important;
+  .fc-toolbar-chunk {
+    gap: 0.25rem;
   }
 
-  .calendar-tile-content {
-    padding-top: 10px !important;
+  .fc-button {
+    font-size: 0.65rem !important;
+    padding: 0.2rem 0.4rem !important;
   }
 
-  .react-calendar__navigation button {
-    font-size: 0.85rem !important;
-    padding: 3px !important;
-  }
-
-  .react-calendar__month-view__weekdays {
-    font-size: 0.7rem !important;
-  }
-}
-
-/* タブレット対応 */
-@media (min-width: 641px) and (max-width: 1023px) {
-  .custom-calendar {
-    font-size: 0.85rem !important;
-  }
-
-  .react-calendar__tile abbr {
-    font-size: 0.75rem !important;
-    top: 2px !important;
-    left: 2px !important;
-  }
-
-  .calendar-tile-content {
-    padding-top: 12px !important;
-  }
-}
-
-/* デスクトップ対応 - 小さくする */
-@media (min-width: 1024px) {
-  .custom-calendar {
-    font-size: 0.85rem !important;
-  }
-
-  .react-calendar__tile abbr {
-    font-size: 0.75rem !important;
-    top: 2px !important;
-    left: 2px !important;
-  }
-
-  .calendar-tile-content {
-    padding-top: 14px !important;
-  }
-
-  .react-calendar__month-view__weekdays {
-    font-size: 0.75rem !important;
-  }
-
-  .react-calendar__navigation button {
+  .fc-toolbar-title {
     font-size: 0.9rem !important;
+    text-align: center;
+  }
+
+  .fc-daygrid-day {
+    height: 55px !important;
+    min-height: 55px !important;
+  }
+
+  .fc-daygrid-day-number {
+    font-size: 0.65rem !important;
+    padding: 0.2rem;
+  }
+
+  .fc-event {
+    font-size: 0.6rem !important;
+    padding: 1px 2px !important;
+  }
+
+  .fc-col-header-cell {
+    padding: 0.3rem 0.1rem !important;
+    font-size: 0.7rem !important;
+    width: 14.2857% !important;
+    box-sizing: border-box !important;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 1023px) {
+  .fc-toolbar-title {
+    font-size: 1rem !important;
+  }
+
+  .fc-daygrid-day {
+    height: 65px !important;
+    min-height: 65px !important;
+  }
+
+  .fc-daygrid-day-number {
+    font-size: 0.7rem !important;
+  }
+
+  .fc-event {
+    font-size: 0.65rem !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  .fc-daygrid-day {
+    height: 85px !important;
+    min-height: 85px !important;
+  }
+
+  .fc-daygrid-day-number {
+    font-size: 0.75rem !important;
+  }
+
+  .fc-toolbar-title {
+    font-size: 1.25rem !important;
+  }
+
+  .fc-event {
+    font-size: 0.7rem !important;
+  }
+}
+
+/* カスタムローディング状態 */
+.fc-loading {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* アニメーション */
+.fc-event {
+  animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
