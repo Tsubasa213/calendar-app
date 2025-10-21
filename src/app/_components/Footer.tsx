@@ -10,14 +10,38 @@ import {
   faGear,
 } from "@fortawesome/free-solid-svg-icons";
 import { useState } from "react";
+import { useCalendar } from "@/app/context/CalendarContext";
 
 const Footer: React.FC = () => {
   const [activeSection, setActiveSection] = useState<string>("calendar");
+  const { goToToday } = useCalendar();
+
+  const handleCalendarClick = () => {
+    setActiveSection("calendar");
+    if (goToToday) {
+      goToToday();
+    }
+  };
 
   const navItems = [
-    { id: "calendar", icon: faCalendarDays, label: "カレンダー" },
-    { id: "tasks", icon: faListCheck, label: "タスク" },
-    { id: "settings", icon: faGear, label: "設定" },
+    {
+      id: "calendar",
+      icon: faCalendarDays,
+      label: "カレンダー",
+      onClick: handleCalendarClick,
+    },
+    {
+      id: "tasks",
+      icon: faListCheck,
+      label: "タスク",
+      onClick: () => setActiveSection("tasks"),
+    },
+    {
+      id: "settings",
+      icon: faGear,
+      label: "設定",
+      onClick: () => setActiveSection("settings"),
+    },
   ];
 
   return (
@@ -28,7 +52,7 @@ const Footer: React.FC = () => {
           {navItems.map((item) => (
             <button
               key={item.id}
-              onClick={() => setActiveSection(item.id)}
+              onClick={item.onClick}
               className={twMerge(
                 "flex flex-1 flex-col items-center gap-1 py-2 transition-colors",
                 "hover:bg-slate-700",

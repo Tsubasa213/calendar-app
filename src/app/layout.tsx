@@ -7,6 +7,7 @@ config.autoAddCss = false;
 
 import Header from "@/app/_components/Header";
 import Footer from "@/app/_components/Footer";
+import { CalendarProvider } from "@/app/context/CalendarContext";
 
 export const metadata: Metadata = {
   title: "With Calendar",
@@ -22,9 +23,11 @@ export default function RootLayout(props: Props) {
   return (
     <html lang="ja">
       <body className="flex h-screen flex-col overflow-hidden">
-        <Header />
-        <main className="flex-1 overflow-hidden">{children}</main>
-        <Footer />
+        <CalendarProvider>
+          <Header />
+          <main className="flex-1 overflow-hidden">{children}</main>
+          <Footer />
+        </CalendarProvider>
       </body>
     </html>
   );
