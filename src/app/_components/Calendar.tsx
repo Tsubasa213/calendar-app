@@ -130,14 +130,30 @@ const CalendarComponent: React.FC<CalendarComponentProps> = ({
 
         // データベースのイベントをFullCalendar形式に変換
         const formattedEvents: Event[] = (eventsData || []).map(
-          (event: DbEvent) => ({
-            id: event.id,
-            title: event.title,
-            start: event.start_time,
-            end: event.end_time,
-            allDay: event.is_all_day,
-            color: event.color || "#3B82F6",
-          })
+          (event: DbEvent) => {
+            // 全日イベントの場合は日付のみを使用（タイムゾーンの影響を避ける）
+            if (event.is_all_day) {
+              const startDate = event.start_time.split("T")[0];
+              return {
+                id: event.id,
+                title: event.title,
+                start: startDate,
+                end: startDate,
+                allDay: true,
+                color: event.color || "#3B82F6",
+              };
+            } else {
+              // 時間制イベントはそのまま使用
+              return {
+                id: event.id,
+                title: event.title,
+                start: event.start_time,
+                end: event.end_time,
+                allDay: false,
+                color: event.color || "#3B82F6",
+              };
+            }
+          }
         );
 
         setEvents(formattedEvents);
@@ -155,8 +171,9 @@ const CalendarComponent: React.FC<CalendarComponentProps> = ({
     setIsClient(true);
   }, []);
 
-  useEffect(() => {
-    if (isClient && calendarRef.current && onCalendarReady) {
+  // goToToday関数を作成してContextに登録
+  const registerGoToToday = () => {
+    if (onCalendarReady && calendarRef.current) {
       const goToToday = () => {
         const calendarApi = calendarRef.current?.getApi();
         if (calendarApi) {
@@ -165,7 +182,7 @@ const CalendarComponent: React.FC<CalendarComponentProps> = ({
       };
       onCalendarReady(goToToday);
     }
-  }, [isClient, onCalendarReady]);
+  };
 
   if (!isClient) {
     return null;
@@ -176,9 +193,98 @@ const CalendarComponent: React.FC<CalendarComponentProps> = ({
     setIsModalOpen(true);
   };
 
-  // const handleEventClick = (arg: any) => {
-  //   alert(`イベント: ${arg.event.title}`);
-  // };
+  const handleEventClick = (arg: any) => {
+    // イベントをクリックしたときも、その日付の予定表示画面を開く
+    // 全日イベントの場合はstartStrを使用してタイムゾーンの影響を避ける
+    const eventDate = arg.event.allDay
+      ? arg.event.startStr
+      : arg.event.start.toISOString().split("T")[0];
+    setSelectedDate(eventDate);
+    setIsModalOpen(true);
+  };
+
+  const handleEventDrop = async (info: any) => {
+    // ドラッグ&ドロップでイベントの日付を変更
+    const event = info.event;
+    const oldEvent = info.oldEvent;
+    const isAllDay = event.allDay;
+
+    // 全日イベントの場合はstartStrを使用してタイムゾーンの影響を避ける
+    const newDate = isAllDay
+      ? event.startStr
+      : event.start.toISOString().split("T")[0];
+
+    let newStartTime: string;
+    let newEndTime: string;
+
+    if (isAllDay) {
+      // 全日イベントの場合
+      newStartTime = `${newDate}T00:00:00`;
+      newEndTime = `${newDate}T23:59:59`;
+    } else {
+      // 時間制イベントの場合 - 時刻は保持したまま日付のみ変更
+      const oldStart = oldEvent.start;
+      const oldTime = oldStart.toTimeString().split(" ")[0];
+      newStartTime = `${newDate}T${oldTime}`;
+
+      const oldEnd = oldEvent.end || oldStart;
+      const oldEndTime = oldEnd.toTimeString().split(" ")[0];
+      newEndTime = `${newDate}T${oldEndTime}`;
+    }
+
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user || !defaultCalendarId) {
+        // ローカルのみで更新
+        const updatedEvents = events.map((e) =>
+          e.id === event.id
+            ? {
+                ...e,
+                start: isAllDay ? newDate : newStartTime,
+                end: isAllDay ? newDate : newEndTime,
+              }
+            : e
+        );
+        setEvents(updatedEvents);
+        return;
+      }
+
+      // データベースを更新
+      const { error } = await supabase
+        .from("events")
+        .update({
+          start_time: newStartTime,
+          end_time: newEndTime,
+        })
+        .eq("id", event.id);
+
+      if (error) {
+        console.error("イベント更新エラー:", error);
+        info.revert(); // エラー時は元に戻す
+        alert("予定の更新に失敗しました");
+        return;
+      }
+
+      // 成功時、ローカルの状態も更新
+      const updatedEvents = events.map((e) =>
+        e.id === event.id
+          ? {
+              ...e,
+              start: isAllDay ? newDate : newStartTime,
+              end: isAllDay ? newDate : newEndTime,
+            }
+          : e
+      );
+      setEvents(updatedEvents);
+    } catch (error) {
+      console.error("予期しないエラー:", error);
+      info.revert();
+      alert("予定の更新に失敗しました");
+    }
+  };
 
   const getEventsForDate = (dateStr: string) => {
     return events.filter((event) => {
@@ -251,8 +357,12 @@ const CalendarComponent: React.FC<CalendarComponentProps> = ({
       const newEvent: Event = {
         id: newEventData.id,
         title: newEventData.title,
-        start: newEventData.start_time,
-        end: newEventData.end_time,
+        start: newEventData.is_all_day
+          ? newEventData.start_time.split("T")[0]
+          : newEventData.start_time,
+        end: newEventData.is_all_day
+          ? newEventData.end_time.split("T")[0]
+          : newEventData.end_time,
         allDay: newEventData.is_all_day,
         color: newEventData.color || "#3B82F6",
       };
@@ -318,14 +428,93 @@ const CalendarComponent: React.FC<CalendarComponentProps> = ({
               }}
               events={events}
               dateClick={handleDateClick}
-              // eventClick={handleEventClick}
+              eventClick={handleEventClick}
+              eventDrop={handleEventDrop}
+              datesSet={registerGoToToday}
               editable={true}
+              eventStartEditable={true}
+              eventDurationEditable={false}
+              eventResizableFromStart={false}
               selectable={true}
               selectMirror={true}
-              dayMaxEvents={2}
+              dayMaxEvents={4}
               weekends={true}
               height="100%"
               locale="ja"
+              eventContent={(arg) => {
+                const isAllDay = arg.event.allDay;
+                const eventColor = arg.event.backgroundColor || "#3B82F6";
+
+                if (isAllDay) {
+                  // 全日イベントの表示 - コンパクトでスタイリッシュ
+                  return (
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        backgroundColor: eventColor,
+                        color: "white",
+                        padding: "1px 4px",
+                        borderRadius: "3px",
+                        fontSize: "0.65rem",
+                        fontWeight: "600",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                        cursor: "grab",
+                        height: "18px",
+                        lineHeight: "16px",
+                      }}
+                    >
+                      <span
+                        style={{
+                          marginRight: "3px",
+                          fontSize: "0.7rem",
+                          lineHeight: "1",
+                        }}
+                      >
+                        ●
+                      </span>
+                      <span>{arg.event.title}</span>
+                    </div>
+                  );
+                } else {
+                  // 時間制イベントの表示 - 背景なし、左ボーダーのみ
+                  return (
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        backgroundColor: "transparent",
+                        color: "#1f2937",
+                        padding: "1px 0 1px 4px",
+                        borderRadius: "2px",
+                        fontSize: "0.65rem",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                        cursor: "grab",
+                        borderLeft: `3px solid ${eventColor}`,
+                        height: "18px",
+                        lineHeight: "16px",
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontWeight: "700",
+                          color: eventColor,
+                          marginRight: "4px",
+                        }}
+                      >
+                        {arg.timeText}
+                      </span>
+                      <span style={{ fontWeight: "500" }}>
+                        {arg.event.title}
+                      </span>
+                    </div>
+                  );
+                }
+              }}
               buttonText={{
                 today: "今日",
                 month: "月",

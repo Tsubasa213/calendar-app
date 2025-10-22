@@ -5,9 +5,9 @@ import "@fortawesome/fontawesome-svg-core/styles.css";
 import { config } from "@fortawesome/fontawesome-svg-core";
 config.autoAddCss = false;
 
-import Header from "@/app/_components/Header";
-import Footer from "@/app/_components/Footer";
 import { CalendarProvider } from "@/app/context/CalendarContext";
+import { AuthProvider } from "@/app/context/AuthContext";
+import ConditionalLayout from "@/app/_components/ConditionalLayout";
 
 export const metadata: Metadata = {
   title: "With Calendar",
@@ -23,11 +23,11 @@ export default function RootLayout(props: Props) {
   return (
     <html lang="ja">
       <body className="flex h-screen flex-col overflow-hidden">
-        <CalendarProvider>
-          <Header />
-          <main className="flex-1 overflow-hidden">{children}</main>
-          <Footer />
-        </CalendarProvider>
+        <AuthProvider>
+          <CalendarProvider>
+            <ConditionalLayout>{children}</ConditionalLayout>
+          </CalendarProvider>
+        </AuthProvider>
       </body>
     </html>
   );

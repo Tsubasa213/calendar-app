@@ -229,22 +229,25 @@
 
 /* イベントのスタイル */
 .fc-event {
-  border-radius: 0.25rem !important;
+  border-radius: 3px !important;
   border: none !important;
   font-size: 0.65rem !important;
   font-weight: 500 !important;
-  margin: 1px !important;
-  padding: 1px 3px !important;
-  cursor: pointer !important;
-  transition: all 0.2s ease !important;
+  margin: 1px 2px !important;
+  padding: 0 !important;
+  cursor: grab !important;
+  transition: all 0.15s ease !important;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  height: 18px !important;
+  line-height: 18px !important;
 }
 
 .fc-event:hover {
-  opacity: 0.8 !important;
+  opacity: 0.85 !important;
   transform: translateY(-1px) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
 }
 
 .fc-event-title {
@@ -260,12 +263,17 @@
 /* "more" リンクのスタイル */
 .fc-daygrid-more-link {
   color: #6b7280 !important;
-  font-size: 0.65rem !important;
-  font-weight: 500 !important;
+  font-size: 0.6rem !important;
+  font-weight: 600 !important;
+  padding: 1px 4px !important;
+  margin: 1px 2px !important;
+  text-decoration: none !important;
 }
 
 .fc-daygrid-more-link:hover {
   color: #3b82f6 !important;
+  background-color: #f3f4f6 !important;
+  border-radius: 2px !important;
 }
 
 /* 時間軸のスタイル */
@@ -309,8 +317,8 @@
   }
 
   .fc-daygrid-day {
-    height: 55px !important;
-    min-height: 55px !important;
+    height: 75px !important;
+    min-height: 75px !important;
   }
 
   .fc-daygrid-day-number {
@@ -320,7 +328,9 @@
 
   .fc-event {
     font-size: 0.6rem !important;
-    padding: 1px 2px !important;
+    padding: 0 !important;
+    height: 16px !important;
+    line-height: 16px !important;
   }
 
   .fc-col-header-cell {
@@ -337,8 +347,8 @@
   }
 
   .fc-daygrid-day {
-    height: 65px !important;
-    min-height: 65px !important;
+    height: 85px !important;
+    min-height: 85px !important;
   }
 
   .fc-daygrid-day-number {
@@ -347,13 +357,15 @@
 
   .fc-event {
     font-size: 0.65rem !important;
+    height: 17px !important;
+    line-height: 17px !important;
   }
 }
 
 @media (min-width: 1024px) {
   .fc-daygrid-day {
-    height: 85px !important;
-    min-height: 85px !important;
+    height: 100px !important;
+    min-height: 100px !important;
   }
 
   .fc-daygrid-day-number {
@@ -366,6 +378,8 @@
 
   .fc-event {
     font-size: 0.7rem !important;
+    height: 18px !important;
+    line-height: 18px !important;
   }
 }
 
@@ -389,4 +403,39 @@
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* イベントのドラッグ&ドロップとクリックを有効化 */
+.fc-event {
+  cursor: grab !important;
+  transition: all 0.2s ease;
+  pointer-events: auto !important;
+}
+
+.fc-event:hover {
+  opacity: 0.9 !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.fc-event:active {
+  cursor: grabbing !important;
+}
+
+/* ドラッグ中のスタイル */
+.fc-event.fc-dragging {
+  opacity: 0.6 !important;
+  cursor: grabbing !important;
+  transform: scale(1.05);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* イベント内の要素もクリック可能に */
+.fc-event-main {
+  pointer-events: auto !important;
+}
+
+/* イベントタイトルもクリック可能に */
+.fc-event-title {
+  pointer-events: auto !important;
 }
