@@ -33,11 +33,15 @@ SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
 
-## 4. 認証設定
+## 4. 認証設定（後で設定可能）
 
-1. Supabaseダッシュボードで「Authentication」→「Settings」に移動
-2. 「Site URL」を設定: `http://localhost:3000`
-3. 「Redirect URLs」に追加: `http://localhost:3000/auth/callback`
+※ 基本的なカレンダー表示機能は認証設定なしでも動作します。
+※ ユーザーログイン機能を実装する際に設定してください。
+
+1. Supabaseダッシュボードで「Authentication」に移動
+2. 認証設定画面で以下を設定：
+   - 「Site URL」: `http://localhost:3000`
+   - 「Redirect URLs」: `http://localhost:3000/auth/callback`
 
 ## 5. リアルタイム設定
 

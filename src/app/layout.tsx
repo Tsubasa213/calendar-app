@@ -5,10 +5,12 @@ import "@fortawesome/fontawesome-svg-core/styles.css";
 import { config } from "@fortawesome/fontawesome-svg-core";
 config.autoAddCss = false;
 
-import Header from "@/app/_components/Header";
+import { CalendarProvider } from "@/app/context/CalendarContext";
+import { AuthProvider } from "@/app/context/AuthContext";
+import ConditionalLayout from "@/app/_components/ConditionalLayout";
 
 export const metadata: Metadata = {
-  title: "NextBlogApp",
+  title: "With Calendar",
   description: "Built to learn Next.js and modern web development.",
 };
 
@@ -16,15 +18,17 @@ type Props = {
   children: React.ReactNode;
 };
 
-const RootLayout: React.FC<Props> = (props) => {
+export default function RootLayout(props: Props) {
   const { children } = props;
   return (
     <html lang="ja">
-      <body>
-        <Header />
-        <div className="mx-4 mt-2 max-w-2xl md:mx-auto">{children}</div>
+      <body className="flex h-screen flex-col overflow-hidden">
+        <AuthProvider>
+          <CalendarProvider>
+            <ConditionalLayout>{children}</ConditionalLayout>
+          </CalendarProvider>
+        </AuthProvider>
       </body>
     </html>
   );
-};
-export default RootLayout;
+}
