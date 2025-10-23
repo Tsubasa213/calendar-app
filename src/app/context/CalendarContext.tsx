@@ -5,6 +5,8 @@ import React, { createContext, useContext, useState } from "react";
 interface CalendarContextType {
   goToToday: (() => void) | null;
   setGoToToday: (fn: () => void) => void;
+  openAddEventModal: (() => void) | null;
+  setOpenAddEventModal: (fn: () => void) => void;
 }
 
 const CalendarContext = createContext<CalendarContextType | undefined>(
@@ -15,13 +17,27 @@ export const CalendarProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [goToToday, setGoToTodayFn] = useState<(() => void) | null>(null);
+  const [openAddEventModal, setOpenAddEventModalFn] = useState<
+    (() => void) | null
+  >(null);
 
   const setGoToToday = (fn: () => void) => {
     setGoToTodayFn(() => fn);
   };
 
+  const setOpenAddEventModal = (fn: () => void) => {
+    setOpenAddEventModalFn(() => fn);
+  };
+
   return (
-    <CalendarContext.Provider value={{ goToToday, setGoToToday }}>
+    <CalendarContext.Provider
+      value={{
+        goToToday,
+        setGoToToday,
+        openAddEventModal,
+        setOpenAddEventModal,
+      }}
+    >
       {children}
     </CalendarContext.Provider>
   );
