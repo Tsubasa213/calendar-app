@@ -6,7 +6,7 @@ import {
   faCopyright,
   faFish,
   faCalendarDays,
-  faListCheck,
+  faPlus,
   faGear,
 } from "@fortawesome/free-solid-svg-icons";
 import { useState } from "react";
@@ -14,12 +14,19 @@ import { useCalendar } from "@/app/context/CalendarContext";
 
 const Footer: React.FC = () => {
   const [activeSection, setActiveSection] = useState<string>("calendar");
-  const { goToToday } = useCalendar();
+  const { goToToday, openAddEventModal } = useCalendar();
 
   const handleCalendarClick = () => {
     setActiveSection("calendar");
     if (goToToday) {
       goToToday();
+    }
+  };
+
+  const handleAddEventClick = () => {
+    setActiveSection("add");
+    if (openAddEventModal) {
+      openAddEventModal();
     }
   };
 
@@ -31,10 +38,10 @@ const Footer: React.FC = () => {
       onClick: handleCalendarClick,
     },
     {
-      id: "tasks",
-      icon: faListCheck,
-      label: "タスク",
-      onClick: () => setActiveSection("tasks"),
+      id: "add",
+      icon: faPlus,
+      label: "予定追加",
+      onClick: handleAddEventClick,
     },
     {
       id: "settings",

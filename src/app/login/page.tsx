@@ -71,24 +71,21 @@ export default function LoginPage() {
     }
   };
 
-  const handleTestLogin = async () => {
+  const handleGoogleLogin = async () => {
     setError(null);
     setIsLoading(true);
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: "test@test.com",
-        password: "test123",
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/`,
+        },
       });
 
       if (error) throw error;
-
-      if (data.user) {
-        router.push("/");
-      }
     } catch (error: any) {
       setError(error.message || "ログインに失敗しました");
-    } finally {
       setIsLoading(false);
     }
   };
@@ -205,7 +202,7 @@ export default function LoginPage() {
               </div>
               <button
                 type="button"
-                onClick={handleTestLogin}
+                onClick={handleGoogleLogin}
                 disabled={isLoading}
                 className="mt-4 flex w-full items-center justify-center gap-3 rounded-lg border border-slate-600 bg-white py-3 font-semibold text-slate-800 transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
               >

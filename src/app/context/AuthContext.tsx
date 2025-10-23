@@ -92,7 +92,16 @@ export function AuthProvider({ children }: Props) {
 
   return (
     <AuthContext.Provider value={{ user, isLoading, signOut }}>
-      {children}
+      {isLoading ? (
+        <div className="flex h-screen items-center justify-center bg-slate-900">
+          <div className="text-center">
+            <div className="mb-4 inline-block size-12 animate-spin rounded-full border-4 border-solid border-blue-500 border-r-transparent"></div>
+            <p className="text-slate-400">読み込み中...</p>
+          </div>
+        </div>
+      ) : (
+        children
+      )}
     </AuthContext.Provider>
   );
 }

@@ -23,10 +23,12 @@ type DbEvent = Database["public"]["Tables"]["events"]["Row"];
 
 interface CalendarComponentProps {
   onCalendarReady?: (goToToday: () => void) => void;
+  onAddEventReady?: (openAddEventModal: () => void) => void;
 }
 
 const CalendarComponent: React.FC<CalendarComponentProps> = ({
   onCalendarReady,
+  onAddEventReady,
 }) => {
   const calendarRef = useRef<FullCalendar>(null);
   const supabase = createClient();
@@ -40,9 +42,13 @@ const CalendarComponent: React.FC<CalendarComponentProps> = ({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isAddEventModalOpen, setIsAddEventModalOpen] = useState(false);
   const [newEventTitle, setNewEventTitle] = useState("");
+  const [newEventStartDate, setNewEventStartDate] = useState("");
   const [newEventStartTime, setNewEventStartTime] = useState("");
+  const [newEventEndDate, setNewEventEndDate] = useState("");
   const [newEventEndTime, setNewEventEndTime] = useState("");
   const [newEventAllDay, setNewEventAllDay] = useState(false);
+  const [newEventGenre, setNewEventGenre] = useState("");
+  const [newEventMemo, setNewEventMemo] = useState("");
 
   // データベースからイベントを取得
   useEffect(() => {
@@ -182,6 +188,20 @@ const CalendarComponent: React.FC<CalendarComponentProps> = ({
       };
       onCalendarReady(goToToday);
     }
+
+    if (onAddEventReady) {
+      const openAddEventModal = () => {
+        const today = new Date();
+        const dateStr = today.toISOString().split("T")[0];
+        setSelectedDate(dateStr);
+        setNewEventStartDate(dateStr);
+        setNewEventEndDate(dateStr);
+        setNewEventStartTime("09:00");
+        setNewEventEndTime("10:00");
+        setIsAddEventModalOpen(true);
+      };
+      onAddEventReady(openAddEventModal);
+    }
   };
 
   if (!isClient) {
@@ -190,6 +210,10 @@ const CalendarComponent: React.FC<CalendarComponentProps> = ({
 
   const handleDateClick = (arg: any) => {
     setSelectedDate(arg.dateStr);
+    setNewEventStartDate(arg.dateStr);
+    setNewEventEndDate(arg.dateStr);
+    setNewEventStartTime("09:00");
+    setNewEventEndTime("10:00");
     setIsModalOpen(true);
   };
 
@@ -294,44 +318,109 @@ const CalendarComponent: React.FC<CalendarComponentProps> = ({
   };
 
   const handleAddEvent = async () => {
-    if (!selectedDate || !newEventTitle) return;
+    if (!newEventTitle || !newEventStartDate) return;
 
     try {
       const {
         data: { user },
       } = await supabase.auth.getUser();
 
-      // ユーザーがログインしていない場合はローカルのみに保存
+      const startDate = new Date(newEventStartDate);
+      const endDate = new Date(newEventEndDate || newEventStartDate);
+      const daysDiff = Math.ceil(
+        (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
+      );
+
+      // 全日でない場合で複数日にまたがる場合は、各日に予定を複製
+      if (!newEventAllDay && daysDiff > 0) {
+        const newEvents: Event[] = [];
+
+        for (let i = 0; i <= daysDiff; i++) {
+          const currentDate = new Date(startDate);
+          currentDate.setDate(startDate.getDate() + i);
+          const dateStr = currentDate.toISOString().split("T")[0];
+
+          if (!user || !defaultCalendarId) {
+            // ローカル保存
+            const event: Event = {
+              id: `${Date.now()}_${i}`,
+              title: newEventTitle,
+              start: `${dateStr}T${newEventStartTime || "09:00"}:00`,
+              end: `${dateStr}T${newEventEndTime || "10:00"}:00`,
+              allDay: false,
+              color: "#3B82F6",
+            };
+            newEvents.push(event);
+          } else {
+            // データベースに保存
+            const startTime = `${dateStr}T${newEventStartTime || "09:00"}:00`;
+            const endTime = `${dateStr}T${newEventEndTime || "10:00"}:00`;
+
+            const { data: eventData, error } = await supabase
+              .from("events")
+              .insert({
+                calendar_id: defaultCalendarId,
+                title: newEventTitle,
+                start_time: startTime,
+                end_time: endTime,
+                is_all_day: false,
+                color: "#3B82F6",
+                created_by: user.id,
+                description: newEventMemo || null,
+              })
+              .select()
+              .single();
+
+            if (error) {
+              console.error("イベント保存エラー:", error);
+              continue;
+            }
+
+            newEvents.push({
+              id: eventData.id,
+              title: eventData.title,
+              start: eventData.start_time,
+              end: eventData.end_time,
+              allDay: false,
+              color: eventData.color || "#3B82F6",
+            });
+          }
+        }
+
+        setEvents([...events, ...newEvents]);
+        setIsAddEventModalOpen(false);
+        resetFormFields();
+        return;
+      }
+
+      // 単一日または全日イベントの場合（従来の処理）
       if (!user || !defaultCalendarId) {
         const newEvent: Event = {
           id: String(Date.now()),
           title: newEventTitle,
           start: newEventAllDay
-            ? selectedDate
-            : `${selectedDate}T${newEventStartTime || "09:00"}:00`,
+            ? newEventStartDate
+            : `${newEventStartDate}T${newEventStartTime || "09:00"}:00`,
           end: newEventAllDay
-            ? selectedDate
-            : `${selectedDate}T${newEventEndTime || "10:00"}:00`,
+            ? newEventEndDate || newEventStartDate
+            : `${newEventEndDate || newEventStartDate}T${newEventEndTime || "10:00"}:00`,
           allDay: newEventAllDay,
           color: "#3B82F6",
         };
 
         setEvents([...events, newEvent]);
         setIsAddEventModalOpen(false);
-        setNewEventTitle("");
-        setNewEventStartTime("");
-        setNewEventEndTime("");
-        setNewEventAllDay(false);
+        resetFormFields();
         return;
       }
 
       // データベースに保存
       const startTime = newEventAllDay
-        ? `${selectedDate}T00:00:00`
-        : `${selectedDate}T${newEventStartTime || "09:00"}:00`;
+        ? `${newEventStartDate}T00:00:00`
+        : `${newEventStartDate}T${newEventStartTime || "09:00"}:00`;
       const endTime = newEventAllDay
-        ? `${selectedDate}T23:59:59`
-        : `${selectedDate}T${newEventEndTime || "10:00"}:00`;
+        ? `${newEventEndDate || newEventStartDate}T23:59:59`
+        : `${newEventEndDate || newEventStartDate}T${newEventEndTime || "10:00"}:00`;
 
       const { data: newEventData, error } = await supabase
         .from("events")
@@ -343,6 +432,7 @@ const CalendarComponent: React.FC<CalendarComponentProps> = ({
           is_all_day: newEventAllDay,
           color: "#3B82F6",
           created_by: user.id,
+          description: newEventMemo || null,
         })
         .select()
         .single();
@@ -369,14 +459,22 @@ const CalendarComponent: React.FC<CalendarComponentProps> = ({
 
       setEvents([...events, newEvent]);
       setIsAddEventModalOpen(false);
-      setNewEventTitle("");
-      setNewEventStartTime("");
-      setNewEventEndTime("");
-      setNewEventAllDay(false);
+      resetFormFields();
     } catch (error) {
       console.error("予期しないエラー:", error);
       alert("予定の追加に失敗しました");
     }
+  };
+
+  const resetFormFields = () => {
+    setNewEventTitle("");
+    setNewEventStartDate("");
+    setNewEventStartTime("");
+    setNewEventEndDate("");
+    setNewEventEndTime("");
+    setNewEventAllDay(false);
+    setNewEventGenre("");
+    setNewEventMemo("");
   };
 
   const closeModal = () => {
@@ -385,15 +483,16 @@ const CalendarComponent: React.FC<CalendarComponentProps> = ({
   };
 
   const openAddEventModal = () => {
+    setIsModalOpen(false);
+    // 時間が設定されていなければデフォルト値を設定
+    if (!newEventStartTime) setNewEventStartTime("09:00");
+    if (!newEventEndTime) setNewEventEndTime("10:00");
     setIsAddEventModalOpen(true);
   };
 
   const closeAddEventModal = () => {
     setIsAddEventModalOpen(false);
-    setNewEventTitle("");
-    setNewEventStartTime("");
-    setNewEventEndTime("");
-    setNewEventAllDay(false);
+    resetFormFields();
   };
 
   return (
@@ -639,9 +738,9 @@ const CalendarComponent: React.FC<CalendarComponentProps> = ({
       )}
 
       {/* 予定追加モーダル */}
-      {isAddEventModalOpen && selectedDate && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="w-full max-w-lg rounded-lg bg-white p-6 shadow-xl">
+      {isAddEventModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-lg bg-white p-6 shadow-xl">
             <div className="mb-4 flex items-center justify-between">
               <h3 className="text-xl font-bold">予定を追加</h3>
               <button
@@ -691,32 +790,84 @@ const CalendarComponent: React.FC<CalendarComponentProps> = ({
                 </label>
               </div>
 
-              {!newEventAllDay && (
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="mb-1 block text-sm font-medium text-gray-700">
-                      開始時刻
-                    </label>
+              {/* 開始日時 */}
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">
+                  開始日時
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    type="date"
+                    value={newEventStartDate}
+                    onChange={(e) => setNewEventStartDate(e.target.value)}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                  {!newEventAllDay && (
                     <input
                       type="time"
                       value={newEventStartTime}
                       onChange={(e) => setNewEventStartTime(e.target.value)}
                       className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                     />
-                  </div>
-                  <div>
-                    <label className="mb-1 block text-sm font-medium text-gray-700">
-                      終了時刻
-                    </label>
+                  )}
+                </div>
+              </div>
+
+              {/* 終了日時 */}
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">
+                  終了日時
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    type="date"
+                    value={newEventEndDate}
+                    onChange={(e) => setNewEventEndDate(e.target.value)}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                  {!newEventAllDay && (
                     <input
                       type="time"
                       value={newEventEndTime}
                       onChange={(e) => setNewEventEndTime(e.target.value)}
                       className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                     />
-                  </div>
+                  )}
                 </div>
-              )}
+              </div>
+
+              {/* ジャンル選択 */}
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">
+                  予定のジャンル
+                </label>
+                <select
+                  value={newEventGenre}
+                  onChange={(e) => setNewEventGenre(e.target.value)}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                >
+                  <option value="">選択してください</option>
+                  <option value="work">仕事</option>
+                  <option value="personal">プライベート</option>
+                  <option value="meeting">会議</option>
+                  <option value="event">イベント</option>
+                  <option value="other">その他</option>
+                </select>
+              </div>
+
+              {/* メモ */}
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">
+                  メモ
+                </label>
+                <textarea
+                  value={newEventMemo}
+                  onChange={(e) => setNewEventMemo(e.target.value)}
+                  rows={3}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  placeholder="詳細や備考を入力"
+                />
+              </div>
 
               <div className="flex gap-3">
                 <button
@@ -727,7 +878,7 @@ const CalendarComponent: React.FC<CalendarComponentProps> = ({
                 </button>
                 <button
                   onClick={handleAddEvent}
-                  disabled={!newEventTitle}
+                  disabled={!newEventTitle || !newEventStartDate}
                   className="flex-1 rounded-lg bg-blue-600 px-4 py-2 text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300"
                 >
                   追加
