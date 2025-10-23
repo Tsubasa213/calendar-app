@@ -325,7 +325,75 @@ const CalendarComponent: React.FC<CalendarComponentProps> = ({
         data: { user },
       } = await supabase.auth.getUser();
 
-      // ユーザーがログインしていない場合はローカルのみに保存
+      const startDate = new Date(newEventStartDate);
+      const endDate = new Date(newEventEndDate || newEventStartDate);
+      const daysDiff = Math.ceil(
+        (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
+      );
+
+      // 全日でない場合で複数日にまたがる場合は、各日に予定を複製
+      if (!newEventAllDay && daysDiff > 0) {
+        const newEvents: Event[] = [];
+
+        for (let i = 0; i <= daysDiff; i++) {
+          const currentDate = new Date(startDate);
+          currentDate.setDate(startDate.getDate() + i);
+          const dateStr = currentDate.toISOString().split("T")[0];
+
+          if (!user || !defaultCalendarId) {
+            // ローカル保存
+            const event: Event = {
+              id: `${Date.now()}_${i}`,
+              title: newEventTitle,
+              start: `${dateStr}T${newEventStartTime || "09:00"}:00`,
+              end: `${dateStr}T${newEventEndTime || "10:00"}:00`,
+              allDay: false,
+              color: "#3B82F6",
+            };
+            newEvents.push(event);
+          } else {
+            // データベースに保存
+            const startTime = `${dateStr}T${newEventStartTime || "09:00"}:00`;
+            const endTime = `${dateStr}T${newEventEndTime || "10:00"}:00`;
+
+            const { data: eventData, error } = await supabase
+              .from("events")
+              .insert({
+                calendar_id: defaultCalendarId,
+                title: newEventTitle,
+                start_time: startTime,
+                end_time: endTime,
+                is_all_day: false,
+                color: "#3B82F6",
+                created_by: user.id,
+                description: newEventMemo || null,
+              })
+              .select()
+              .single();
+
+            if (error) {
+              console.error("イベント保存エラー:", error);
+              continue;
+            }
+
+            newEvents.push({
+              id: eventData.id,
+              title: eventData.title,
+              start: eventData.start_time,
+              end: eventData.end_time,
+              allDay: false,
+              color: eventData.color || "#3B82F6",
+            });
+          }
+        }
+
+        setEvents([...events, ...newEvents]);
+        setIsAddEventModalOpen(false);
+        resetFormFields();
+        return;
+      }
+
+      // 単一日または全日イベントの場合（従来の処理）
       if (!user || !defaultCalendarId) {
         const newEvent: Event = {
           id: String(Date.now()),
