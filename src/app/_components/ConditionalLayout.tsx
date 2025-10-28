@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import Header from "@/app/_components/Header";
 import Footer from "@/app/_components/Footer";
+import Sidebar from "@/app/_components/Sidebar";
 
 export default function ConditionalLayout({
   children,
@@ -19,7 +20,10 @@ export default function ConditionalLayout({
   return (
     <>
       <Header />
-      <main className="flex-1 overflow-hidden">{children}</main>
+      <div className="flex flex-1 overflow-hidden">
+        <Sidebar />
+        <main className="flex-1 overflow-hidden">{children}</main>
+      </div>
       <Footer />
     </>
   );

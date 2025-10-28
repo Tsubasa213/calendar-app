@@ -52,8 +52,8 @@
   background-color: #3b82f6 !important;
   border-color: #3b82f6 !important;
   color: white !important;
-  font-size: 0.75rem !important;
-  padding: 0.25rem 0.5rem !important;
+  font-size: 0.65rem !important;
+  padding: 0.15rem 0.35rem !important;
   border-radius: 0.375rem !important;
   font-weight: 500 !important;
   transition: all 0.2s ease !important;
@@ -75,7 +75,7 @@
 
 /* タイトルのスタイル */
 .fc-toolbar-title {
-  font-size: 1.125rem !important;
+  font-size: 0.9rem !important;
   font-weight: 600 !important;
   color: #1f2937;
   margin: 0 0.5rem;
@@ -143,8 +143,9 @@
 
 /* 日付セルのスタイル */
 .fc-daygrid-day {
-  height: 80px !important;
-  min-height: 70px !important;
+  height: 65px !important;
+  min-height: 65px !important;
+  max-height: 65px !important;
   width: 14.2857% !important;
   box-sizing: border-box !important;
 }
@@ -153,23 +154,26 @@
   height: 100% !important;
   display: flex;
   flex-direction: column;
+  min-height: 65px;
 }
 
 .fc-daygrid-day-top {
   flex-shrink: 0;
+  min-height: 18px;
 }
 
 .fc-daygrid-day-events {
   flex: 1;
   overflow: hidden;
+  max-height: calc(100% - 18px);
 }
 
 .fc-daygrid-day-number {
   color: #374151;
   font-weight: 500;
   text-decoration: none !important;
-  padding: 0.25rem;
-  font-size: 0.7rem !important;
+  padding: 0.12rem;
+  font-size: 0.58rem !important;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -207,11 +211,21 @@
   display: flex !important;
   justify-content: center !important;
   align-items: center !important;
-  padding: 0.25rem;
+  padding: 0.12rem;
   margin: 0;
   font-weight: 600;
-  font-size: 0.7rem !important;
+  font-size: 0.58rem !important;
   text-align: center !important;
+}
+
+/* 日付選択時のハイライト */
+.fc-highlight {
+  background-color: rgba(59, 130, 246, 0.2) !important;
+}
+
+/* 選択中（ドラッグ中）のスタイル */
+.fc-selecting {
+  background-color: rgba(59, 130, 246, 0.15) !important;
 }
 
 /* 曜日ヘッダーのスタイル */
@@ -219,9 +233,9 @@
   background-color: #f9fafb !important;
   font-weight: 600 !important;
   color: #374151 !important;
-  padding: 0.4rem 0.2rem !important;
+  padding: 0.2rem 0.1rem !important;
   border-bottom: 2px solid #e5e7eb !important;
-  font-size: 0.75rem !important;
+  font-size: 0.6rem !important;
   text-align: center !important;
   width: 14.2857% !important;
   box-sizing: border-box !important;
@@ -229,19 +243,19 @@
 
 /* イベントのスタイル */
 .fc-event {
-  border-radius: 3px !important;
+  border-radius: 2px !important;
   border: none !important;
-  font-size: 0.65rem !important;
+  font-size: 0.52rem !important;
   font-weight: 500 !important;
-  margin: 1px 2px !important;
-  padding: 0 !important;
+  margin: 0.5px 1px !important;
+  padding: 0 1.5px !important;
   cursor: grab !important;
   transition: all 0.15s ease !important;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  height: 18px !important;
-  line-height: 18px !important;
+  height: 13px !important;
+  line-height: 13px !important;
 }
 
 .fc-event:hover {
@@ -317,25 +331,40 @@
   }
 
   .fc-daygrid-day {
-    height: 75px !important;
-    min-height: 75px !important;
+    min-height: 60px !important;
+    max-height: 70px !important;
+    height: auto !important;
+  }
+
+  .fc-daygrid-day-frame {
+    min-height: 60px !important;
   }
 
   .fc-daygrid-day-number {
-    font-size: 0.65rem !important;
-    padding: 0.2rem;
+    font-size: 0.6rem !important;
+    padding: 0.15rem;
+    min-height: 18px;
+  }
+
+  .fc-daygrid-day-top {
+    min-height: 18px !important;
+  }
+
+  .fc-daygrid-day-events {
+    max-height: calc(100% - 18px) !important;
   }
 
   .fc-event {
-    font-size: 0.6rem !important;
-    padding: 0 !important;
-    height: 16px !important;
-    line-height: 16px !important;
+    font-size: 0.55rem !important;
+    padding: 0 2px !important;
+    height: 14px !important;
+    line-height: 14px !important;
+    margin: 0.5px 1px !important;
   }
 
   .fc-col-header-cell {
-    padding: 0.3rem 0.1rem !important;
-    font-size: 0.7rem !important;
+    padding: 0.25rem 0.1rem !important;
+    font-size: 0.65rem !important;
     width: 14.2857% !important;
     box-sizing: border-box !important;
   }
@@ -347,29 +376,58 @@
   }
 
   .fc-daygrid-day {
-    height: 85px !important;
-    min-height: 85px !important;
+    min-height: 70px !important;
+    max-height: 90px !important;
+    height: auto !important;
+  }
+
+  .fc-daygrid-day-frame {
+    min-height: 70px !important;
   }
 
   .fc-daygrid-day-number {
     font-size: 0.7rem !important;
+    min-height: 20px;
+  }
+
+  .fc-daygrid-day-top {
+    min-height: 20px !important;
+  }
+
+  .fc-daygrid-day-events {
+    max-height: calc(100% - 20px) !important;
   }
 
   .fc-event {
-    font-size: 0.65rem !important;
-    height: 17px !important;
-    line-height: 17px !important;
+    font-size: 0.6rem !important;
+    height: 16px !important;
+    line-height: 16px !important;
+    margin: 0.5px 1.5px !important;
   }
 }
 
 @media (min-width: 1024px) {
   .fc-daygrid-day {
-    height: 100px !important;
-    min-height: 100px !important;
+    min-height: 90px !important;
+    max-height: 130px !important;
+    height: auto !important;
+  }
+
+  .fc-daygrid-day-frame {
+    min-height: 90px !important;
   }
 
   .fc-daygrid-day-number {
     font-size: 0.75rem !important;
+    min-height: 24px;
+  }
+
+  .fc-daygrid-day-top {
+    min-height: 24px !important;
+  }
+
+  .fc-daygrid-day-events {
+    max-height: calc(100% - 24px) !important;
   }
 
   .fc-toolbar-title {
@@ -377,9 +435,10 @@
   }
 
   .fc-event {
-    font-size: 0.7rem !important;
+    font-size: 0.65rem !important;
     height: 18px !important;
     line-height: 18px !important;
+    margin: 1px 2px !important;
   }
 }
 
@@ -438,4 +497,38 @@
 /* イベントタイトルもクリック可能に */
 .fc-event-title {
   pointer-events: auto !important;
+}
+
+/* "+more"リンクを非表示 */
+.fc-daygrid-more-link {
+  display: none !important;
+}
+
+/* イベント数が多い場合のスタイル調整 */
+.fc-daygrid-day-events {
+  max-height: calc(100% - 18px) !important;
+  overflow: hidden !important;
+}
+
+/* セルの高さを均等に（6週表示に対応） */
+.fc-daygrid-body tr {
+  height: 65px !important;
+}
+
+.fc-scrollgrid-sync-table {
+  height: 100% !important;
+  table-layout: fixed !important;
+}
+
+/* 週の高さを均等に */
+.fc-daygrid-body-balanced .fc-scrollgrid-sync-table {
+  height: 100% !important;
+}
+
+.fc-daygrid-body {
+  height: 100% !important;
+}
+
+.fc-scrollgrid-sync-inner {
+  height: 100% !important;
 }

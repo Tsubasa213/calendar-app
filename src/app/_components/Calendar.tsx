@@ -140,11 +140,18 @@ const CalendarComponent: React.FC<CalendarComponentProps> = ({
             // 全日イベントの場合は日付のみを使用（タイムゾーンの影響を避ける）
             if (event.is_all_day) {
               const startDate = event.start_time.split("T")[0];
+              const endDate = event.end_time.split("T")[0];
+
+              // FullCalendarの全日イベントは終了日を翌日にする必要がある
+              const endDateObj = new Date(endDate);
+              endDateObj.setDate(endDateObj.getDate() + 1);
+              const formattedEndDate = endDateObj.toISOString().split("T")[0];
+
               return {
                 id: event.id,
                 title: event.title,
                 start: startDate,
-                end: startDate,
+                end: formattedEndDate,
                 allDay: true,
                 color: event.color || "#3B82F6",
               };
@@ -214,7 +221,36 @@ const CalendarComponent: React.FC<CalendarComponentProps> = ({
     setNewEventEndDate(arg.dateStr);
     setNewEventStartTime("09:00");
     setNewEventEndTime("10:00");
-    setIsModalOpen(true);
+    setNewEventAllDay(false); // 単一日クリック時は全日イベントをfalseに
+    setIsAddEventModalOpen(false); // 予定追加モーダルを明示的に閉じる
+    setIsModalOpen(true); // まず予定一覧を表示
+  };
+
+  const handleDateSelect = (selectInfo: any) => {
+    // 複数日選択時の処理
+    const startDate = selectInfo.startStr;
+    const endDate = new Date(selectInfo.end);
+    endDate.setDate(endDate.getDate() - 1); // endは選択終了日の翌日なので-1
+    const endDateStr = endDate.toISOString().split("T")[0];
+
+    // 単一日クリックの場合はhandleDateClickに任せる
+    if (startDate === endDateStr) {
+      const calendarApi = selectInfo.view.calendar;
+      calendarApi.unselect();
+      return;
+    }
+
+    setSelectedDate(startDate);
+    setNewEventStartDate(startDate);
+    setNewEventEndDate(endDateStr);
+    setNewEventStartTime("09:00");
+    setNewEventEndTime("10:00");
+    setNewEventAllDay(true); // 複数日選択時は全日イベントとして扱う
+    setIsAddEventModalOpen(true);
+
+    // 選択範囲をクリア
+    const calendarApi = selectInfo.view.calendar;
+    calendarApi.unselect();
   };
 
   const handleEventClick = (arg: any) => {
@@ -233,20 +269,32 @@ const CalendarComponent: React.FC<CalendarComponentProps> = ({
     const oldEvent = info.oldEvent;
     const isAllDay = event.allDay;
 
-    // 全日イベントの場合はstartStrを使用してタイムゾーンの影響を避ける
-    const newDate = isAllDay
-      ? event.startStr
-      : event.start.toISOString().split("T")[0];
-
     let newStartTime: string;
     let newEndTime: string;
 
     if (isAllDay) {
-      // 全日イベントの場合
-      newStartTime = `${newDate}T00:00:00`;
-      newEndTime = `${newDate}T23:59:59`;
+      // 全日イベントの場合 - イベントの期間(日数)を保持
+      const newStart = event.start;
+      const newEnd = event.end;
+
+      if (!newStart || !newEnd) {
+        console.error("イベントの日付情報が不正です");
+        info.revert();
+        return;
+      }
+
+      const newStartDate = newStart.toISOString().split("T")[0];
+
+      // FullCalendarのendは排他的なので、1日引いたものが実際の最終日
+      const actualEndDate = new Date(newEnd);
+      actualEndDate.setDate(actualEndDate.getDate() - 1);
+      const newEndDateStr = actualEndDate.toISOString().split("T")[0];
+
+      newStartTime = `${newStartDate}T00:00:00`;
+      newEndTime = `${newEndDateStr}T23:59:59`;
     } else {
       // 時間制イベントの場合 - 時刻は保持したまま日付のみ変更
+      const newDate = event.start.toISOString().split("T")[0];
       const oldStart = oldEvent.start;
       const oldTime = oldStart.toTimeString().split(" ")[0];
       newStartTime = `${newDate}T${oldTime}`;
@@ -267,8 +315,15 @@ const CalendarComponent: React.FC<CalendarComponentProps> = ({
           e.id === event.id
             ? {
                 ...e,
-                start: isAllDay ? newDate : newStartTime,
-                end: isAllDay ? newDate : newEndTime,
+                start: isAllDay ? newStartTime.split("T")[0] : newStartTime,
+                end: isAllDay
+                  ? (() => {
+                      // FullCalendar用に+1日
+                      const endDate = new Date(newEndTime.split("T")[0]);
+                      endDate.setDate(endDate.getDate() + 1);
+                      return endDate.toISOString().split("T")[0];
+                    })()
+                  : newEndTime,
               }
             : e
         );
@@ -297,8 +352,15 @@ const CalendarComponent: React.FC<CalendarComponentProps> = ({
         e.id === event.id
           ? {
               ...e,
-              start: isAllDay ? newDate : newStartTime,
-              end: isAllDay ? newDate : newEndTime,
+              start: isAllDay ? newStartTime.split("T")[0] : newStartTime,
+              end: isAllDay
+                ? (() => {
+                    // FullCalendar用に+1日
+                    const endDate = new Date(newEndTime.split("T")[0]);
+                    endDate.setDate(endDate.getDate() + 1);
+                    return endDate.toISOString().split("T")[0];
+                  })()
+                : newEndTime,
             }
           : e
       );
@@ -393,7 +455,7 @@ const CalendarComponent: React.FC<CalendarComponentProps> = ({
         return;
       }
 
-      // 単一日または全日イベントの場合（従来の処理）
+      // 単一日または全日イベントの場合(従来の処理)
       if (!user || !defaultCalendarId) {
         const newEvent: Event = {
           id: String(Date.now()),
@@ -402,7 +464,12 @@ const CalendarComponent: React.FC<CalendarComponentProps> = ({
             ? newEventStartDate
             : `${newEventStartDate}T${newEventStartTime || "09:00"}:00`,
           end: newEventAllDay
-            ? newEventEndDate || newEventStartDate
+            ? (() => {
+                // FullCalendar's all-day events require end date to be next day
+                const endDate = new Date(newEventEndDate || newEventStartDate);
+                endDate.setDate(endDate.getDate() + 1);
+                return endDate.toISOString().split("T")[0];
+              })()
             : `${newEventEndDate || newEventStartDate}T${newEventEndTime || "10:00"}:00`,
           allDay: newEventAllDay,
           color: "#3B82F6",
@@ -451,7 +518,12 @@ const CalendarComponent: React.FC<CalendarComponentProps> = ({
           ? newEventData.start_time.split("T")[0]
           : newEventData.start_time,
         end: newEventData.is_all_day
-          ? newEventData.end_time.split("T")[0]
+          ? (() => {
+              // FullCalendarの全日イベントは終了日を翌日にする必要がある
+              const endDate = new Date(newEventData.end_time.split("T")[0]);
+              endDate.setDate(endDate.getDate() + 1);
+              return endDate.toISOString().split("T")[0];
+            })()
           : newEventData.end_time,
         allDay: newEventData.is_all_day,
         color: newEventData.color || "#3B82F6",
@@ -496,12 +568,8 @@ const CalendarComponent: React.FC<CalendarComponentProps> = ({
   };
 
   return (
-    <div className="flex size-full items-center justify-center bg-gray-100 p-2 sm:p-3 md:p-4">
-      <div className="flex size-full max-w-3xl flex-col rounded-lg bg-white p-2 shadow-md sm:p-3 md:p-4">
-        <h2 className="mb-2 text-center text-lg font-semibold sm:mb-3 sm:text-xl md:text-2xl">
-          カレンダー
-        </h2>
-
+    <div className="flex size-full items-center justify-center bg-gray-100 p-2 sm:p-3 md:p-4 lg:pl-3">
+      <div className="flex size-full max-w-5xl flex-col rounded-lg bg-white p-2 shadow-md sm:p-3 md:p-4">
         {isLoading ? (
           <div className="flex flex-1 items-center justify-center">
             <div className="text-center">
@@ -527,6 +595,7 @@ const CalendarComponent: React.FC<CalendarComponentProps> = ({
               }}
               events={events}
               dateClick={handleDateClick}
+              select={handleDateSelect}
               eventClick={handleEventClick}
               eventDrop={handleEventDrop}
               datesSet={registerGoToToday}
@@ -536,10 +605,13 @@ const CalendarComponent: React.FC<CalendarComponentProps> = ({
               eventResizableFromStart={false}
               selectable={true}
               selectMirror={true}
-              dayMaxEvents={4}
+              dayMaxEvents={false}
+              dayMaxEventRows={4}
               weekends={true}
               height="100%"
               locale="ja"
+              fixedWeekCount={true}
+              showNonCurrentDates={true}
               eventContent={(arg) => {
                 const isAllDay = arg.event.allDay;
                 const eventColor = arg.event.backgroundColor || "#3B82F6";
