@@ -228,6 +228,23 @@
   background-color: rgba(59, 130, 246, 0.15) !important;
 }
 
+/* ドロップターゲットのハイライト */
+.fc-day.fc-day-future,
+.fc-day.fc-day-past,
+.fc-day.fc-day-today {
+  transition: background-color 0.15s ease !important;
+}
+
+/* イベントドラッグ時の日付セルのハイライト強化 */
+.fc-event-dragging .fc-day {
+  cursor: copy !important;
+}
+
+.fc-daygrid-day-events {
+  min-height: 24px !important;
+  padding: 2px 0 !important;
+}
+
 /* 曜日ヘッダーのスタイル */
 .fc-col-header-cell {
   background-color: #f9fafb !important;
@@ -250,12 +267,20 @@
   margin: 0.5px 1px !important;
   padding: 0 1.5px !important;
   cursor: grab !important;
-  transition: all 0.15s ease !important;
+  transition:
+    opacity 0.15s ease,
+    box-shadow 0.15s ease !important;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   height: 13px !important;
   line-height: 13px !important;
+  touch-action: none !important;
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+  opacity: 1 !important;
 }
 
 .fc-event:hover {
@@ -264,8 +289,14 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
 }
 
+.fc-event:active {
+  cursor: grabbing !important;
+  opacity: 0.8 !important;
+}
+
 .fc-event-title {
   font-weight: 500 !important;
+  pointer-events: none !important;
 }
 
 /* 週/日表示でのイベントスタイル */
@@ -469,6 +500,7 @@
   cursor: grab !important;
   transition: all 0.2s ease;
   pointer-events: auto !important;
+  position: relative !important;
 }
 
 .fc-event:hover {
@@ -487,6 +519,16 @@
   cursor: grabbing !important;
   transform: scale(1.05);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  z-index: 999 !important;
+}
+
+/* ドラッグ可能領域のハイライト */
+.fc-day:hover {
+  background-color: rgba(59, 130, 246, 0.05) !important;
+}
+
+.fc-day.fc-day-today:hover {
+  background-color: rgba(254, 243, 199, 0.8) !important;
 }
 
 /* イベント内の要素もクリック可能に */
