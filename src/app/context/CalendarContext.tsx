@@ -1,12 +1,14 @@
 "use client";
 
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useState, useEffect } from "react";
 
 interface CalendarContextType {
   goToToday: (() => void) | null;
   setGoToToday: (fn: () => void) => void;
   openAddEventModal: (() => void) | null;
   setOpenAddEventModal: (fn: () => void) => void;
+  currentCalendarId: string | null;
+  setCurrentCalendarId: (id: string | null) => void;
 }
 
 const CalendarContext = createContext<CalendarContextType | undefined>(
@@ -20,6 +22,17 @@ export const CalendarProvider: React.FC<{ children: React.ReactNode }> = ({
   const [openAddEventModal, setOpenAddEventModalFn] = useState<
     (() => void) | null
   >(null);
+  const [currentCalendarId, setCurrentCalendarIdState] = useState<
+    string | null
+  >(null);
+
+  // Load current calendar ID from localStorage on mount
+  useEffect(() => {
+    const savedCalendarId = localStorage.getItem("currentCalendarId");
+    if (savedCalendarId) {
+      setCurrentCalendarIdState(savedCalendarId);
+    }
+  }, []);
 
   const setGoToToday = (fn: () => void) => {
     setGoToTodayFn(() => fn);
@@ -29,6 +42,15 @@ export const CalendarProvider: React.FC<{ children: React.ReactNode }> = ({
     setOpenAddEventModalFn(() => fn);
   };
 
+  const setCurrentCalendarId = (id: string | null) => {
+    setCurrentCalendarIdState(id);
+    if (id) {
+      localStorage.setItem("currentCalendarId", id);
+    } else {
+      localStorage.removeItem("currentCalendarId");
+    }
+  };
+
   return (
     <CalendarContext.Provider
       value={{
@@ -36,6 +58,8 @@ export const CalendarProvider: React.FC<{ children: React.ReactNode }> = ({
         setGoToToday,
         openAddEventModal,
         setOpenAddEventModal,
+        currentCalendarId,
+        setCurrentCalendarId,
       }}
     >
       {children}

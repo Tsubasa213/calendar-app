@@ -12,6 +12,8 @@ export default function ConditionalLayout({
 }) {
   const pathname = usePathname();
   const isLoginPage = pathname === "/login";
+  const isSettingsPage = pathname === "/settings";
+  const isCalendarsPage = pathname === "/calendars";
 
   if (isLoginPage) {
     return <>{children}</>;
@@ -22,7 +24,11 @@ export default function ConditionalLayout({
       <Header />
       <div className="flex flex-1 overflow-hidden">
         <Sidebar />
-        <main className="flex-1 overflow-hidden">{children}</main>
+        <main
+          className={`flex-1 ${isSettingsPage || isCalendarsPage ? "overflow-auto" : "overflow-hidden"}`}
+        >
+          {children}
+        </main>
       </div>
       <Footer />
     </>
