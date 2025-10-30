@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Event } from "@/types/event.types";
 import { getEventsForDate } from "@/lib/utils/eventUtils";
 import { formatDateForDisplay, formatTime } from "@/lib/utils/dateUtils";
@@ -20,9 +20,26 @@ export const EventModal: React.FC<EventModalProps> = ({
   onAddEvent,
   onDeleteEvent,
 }) => {
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+
   if (!isOpen || !selectedDate) return null;
 
   const eventsForDate = getEventsForDate(events, selectedDate);
+
+  const handleDeleteClick = (eventId: string) => {
+    setDeleteConfirmId(eventId);
+  };
+
+  const handleConfirmDelete = () => {
+    if (deleteConfirmId) {
+      onDeleteEvent(deleteConfirmId);
+      setDeleteConfirmId(null);
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setDeleteConfirmId(null);
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
@@ -72,7 +89,7 @@ export const EventModal: React.FC<EventModalProps> = ({
                       </p>
                     </div>
                     <button
-                      onClick={() => onDeleteEvent(event.id)}
+                      onClick={() => handleDeleteClick(event.id)}
                       className="ml-3 rounded-md p-1 text-red-500 transition-colors hover:bg-red-50 hover:text-red-700"
                       title="削除"
                     >
@@ -103,7 +120,7 @@ export const EventModal: React.FC<EventModalProps> = ({
 
         <button
           onClick={onAddEvent}
-          className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-3 text-white transition-colors hover:bg-blue-700"
+          className="flex w-full items-center justify-center gap-2 rounded-lg border border-blue-500/30 bg-blue-500/10 px-4 py-3 text-blue-600 backdrop-blur-sm transition-all hover:border-blue-500/50 hover:bg-blue-500/20"
         >
           <svg
             className="size-5"
@@ -121,6 +138,32 @@ export const EventModal: React.FC<EventModalProps> = ({
           予定を追加
         </button>
       </div>
+
+      {/* 削除確認モーダル */}
+      {deleteConfirmId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
+            <h3 className="mb-4 text-lg font-bold">予定を削除</h3>
+            <p className="mb-6 text-gray-600">
+              本当にこの予定を削除しますか？この操作は取り消せません。
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={handleCancelDelete}
+                className="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-700 transition-colors hover:bg-gray-50"
+              >
+                キャンセル
+              </button>
+              <button
+                onClick={handleConfirmDelete}
+                className="flex-1 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2 text-red-600 backdrop-blur-sm transition-all hover:border-red-500/50 hover:bg-red-500/20"
+              >
+                削除
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

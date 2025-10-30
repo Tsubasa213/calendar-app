@@ -164,7 +164,7 @@ export const AddEventModal: React.FC<AddEventModalProps> = ({
             <button
               onClick={handleSubmit}
               disabled={!formData.title || !formData.startDate}
-              className="flex-1 rounded-lg bg-blue-600 px-4 py-2 text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300"
+              className="flex-1 rounded-lg border border-blue-500/30 bg-blue-500/10 px-4 py-2 text-blue-600 backdrop-blur-sm transition-all hover:border-blue-500/50 hover:bg-blue-500/20 disabled:cursor-not-allowed disabled:opacity-50"
             >
               追加
             </button>

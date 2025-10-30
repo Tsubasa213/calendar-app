@@ -9,7 +9,7 @@ import listPlugin from "@fullcalendar/list";
 import "./Calendar.css";
 import { CalendarComponentProps, EventFormData } from "@/types/event.types";
 import { useEvents } from "./hooks/useEvents";
-import { useCalendar } from "./hooks/useCalendar";
+import { useCalendar as useCalendarHook } from "./hooks/useCalendar";
 import { EventModal } from "./EventModal";
 import { AddEventModal } from "./AddEventModal";
 import { calculateNewEventTimes } from "@/lib/utils/eventUtils";
@@ -23,6 +23,9 @@ const CalendarComponent: React.FC<CalendarComponentProps> = ({
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isAddEventModalOpen, setIsAddEventModalOpen] = useState(false);
+  const [defaultStartTime, setDefaultStartTime] = useState("09:00");
+  const [defaultEndTime, setDefaultEndTime] = useState("10:00");
+  const [weekStartsOn, setWeekStartsOn] = useState(0);
   const [formData, setFormData] = useState<EventFormData>({
     title: "",
     startDate: "",
@@ -38,6 +41,15 @@ const CalendarComponent: React.FC<CalendarComponentProps> = ({
 
   useEffect(() => {
     setIsClient(true);
+
+    // ローカルストレージから設定を読み込み
+    const savedSettings = localStorage.getItem("calendarSettings");
+    if (savedSettings) {
+      const settings = JSON.parse(savedSettings);
+      setDefaultStartTime(settings.defaultStartTime || "09:00");
+      setDefaultEndTime(settings.defaultEndTime || "10:00");
+      setWeekStartsOn(parseInt(settings.weekStartsOn) || 0);
+    }
   }, []);
 
   const openAddEventModalWithDate = (dateStr: string) => {
@@ -45,9 +57,9 @@ const CalendarComponent: React.FC<CalendarComponentProps> = ({
     setFormData({
       title: "",
       startDate: dateStr,
-      startTime: "09:00",
+      startTime: defaultStartTime,
       endDate: dateStr,
-      endTime: "10:00",
+      endTime: defaultEndTime,
       allDay: false,
       genre: "",
       memo: "",
@@ -60,7 +72,7 @@ const CalendarComponent: React.FC<CalendarComponentProps> = ({
     openAddEventModalWithDate(today);
   };
 
-  const { calendarRef, registerGoToToday } = useCalendar(
+  const { calendarRef, registerGoToToday } = useCalendarHook(
     onCalendarReady,
     onAddEventReady,
     openAddEventModalDefault
@@ -152,10 +164,6 @@ const CalendarComponent: React.FC<CalendarComponentProps> = ({
   };
 
   const handleDeleteEvent = async (eventId: string) => {
-    if (!confirm("この予定を削除してもよろしいですか？")) {
-      return;
-    }
-
     try {
       await deleteEvent(eventId);
     } catch (error) {
@@ -255,9 +263,18 @@ const CalendarComponent: React.FC<CalendarComponentProps> = ({
               longPressDelay={100}
               eventLongPressDelay={100}
               selectLongPressDelay={100}
+              firstDay={weekStartsOn}
               eventContent={(arg) => {
                 const isAllDay = arg.event.allDay;
                 const eventColor = arg.event.backgroundColor || "#3B82F6";
+
+                // HEXカラーをRGBAに変換する関数
+                const hexToRgba = (hex: string, alpha: number) => {
+                  const r = parseInt(hex.slice(1, 3), 16);
+                  const g = parseInt(hex.slice(3, 5), 16);
+                  const b = parseInt(hex.slice(5, 7), 16);
+                  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+                };
 
                 if (isAllDay) {
                   return (
@@ -265,8 +282,9 @@ const CalendarComponent: React.FC<CalendarComponentProps> = ({
                       style={{
                         display: "flex",
                         alignItems: "center",
-                        backgroundColor: eventColor,
-                        color: "white",
+                        backgroundColor: hexToRgba(eventColor, 0.1), // 10% opacity
+                        border: `1px solid ${hexToRgba(eventColor, 0.3)}`, // 30% opacity
+                        color: eventColor,
                         padding: "1px 4px",
                         borderRadius: "3px",
                         fontSize: "0.65rem",
