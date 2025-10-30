@@ -10,11 +10,38 @@ interface CreateCalendarModalProps {
   onSuccess: () => void;
 }
 
-
 const CALENDAR_ICONS = [
-  "📅", "📆", "🗓️", "📝", "✨", "🎯", "💼", "🏠", "🎓", "💪",
-  "🧑‍💻", "👨‍👩‍👧‍👦", "🏢", "🏫", "🏥", "🏀", "🎸", "🎮", "🍀", "🌸",
-  "🌞", "🌙", "⭐", "⚡", "🔥", "🍎", "🍕", "🚗", "✈️", "📚", "♡"
+  "📅",
+  "📆",
+  "🗓️",
+  "📝",
+  "✨",
+  "🎯",
+  "💼",
+  "🏠",
+  "🎓",
+  "💪",
+  "🧑‍💻",
+  "👨‍👩‍👧‍👦",
+  "🏢",
+  "🏫",
+  "🏥",
+  "🏀",
+  "🎸",
+  "🎮",
+  "🍀",
+  "🌸",
+  "🌞",
+  "🌙",
+  "⭐",
+  "⚡",
+  "🔥",
+  "🍎",
+  "🍕",
+  "🚗",
+  "✈️",
+  "📚",
+  "♡",
 ];
 
 export default function CreateCalendarModal({
@@ -133,23 +160,34 @@ export default function CreateCalendarModal({
               </label>
               <button
                 type="button"
-                className="mb-2 flex items-center gap-2 rounded border px-3 py-2 text-base text-gray-700 bg-gray-50 hover:bg-gray-100"
+                className="mb-2 flex items-center gap-2 rounded border bg-gray-50 px-3 py-2 text-base text-gray-700 hover:bg-gray-100"
                 onClick={() => setIconOpen((v) => !v)}
                 aria-expanded={iconOpen}
               >
                 <span className="text-2xl">{formData.icon}</span>
                 <span>アイコンを選択</span>
-                <svg className={`ml-1 size-4 transition-transform ${iconOpen ? "rotate-180" : "rotate-0"}`} viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z" clipRule="evenodd" />
+                <svg
+                  className={`ml-1 size-4 transition-transform ${iconOpen ? "rotate-180" : "rotate-0"}`}
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z"
+                    clipRule="evenodd"
+                  />
                 </svg>
               </button>
               {iconOpen && (
-                <div className="grid grid-cols-5 gap-2 max-h-40 overflow-y-auto border rounded bg-white p-2 shadow">
+                <div className="grid max-h-40 grid-cols-5 gap-2 overflow-y-auto rounded border bg-white p-2 shadow">
                   {CALENDAR_ICONS.map((icon) => (
                     <button
                       key={icon}
                       type="button"
-                      onClick={() => { setFormData({ ...formData, icon }); setIconOpen(false); }}
+                      onClick={() => {
+                        setFormData({ ...formData, icon });
+                        setIconOpen(false);
+                      }}
                       className={`rounded-lg border-2 p-3 text-2xl transition-colors ${
                         formData.icon === icon
                           ? "border-blue-500 bg-blue-50"

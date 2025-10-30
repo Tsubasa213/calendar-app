@@ -23,7 +23,9 @@ const Header: React.FC = () => {
   const [showCalendarSelector, setShowCalendarSelector] = useState(false);
   const [displayName, setDisplayName] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [currentCalendarName, setCurrentCalendarName] = useState<string | null>(null);
+  const [currentCalendarName, setCurrentCalendarName] = useState<string | null>(
+    null
+  );
   const [themeColor, setThemeColor] = useState("#1e293b"); // デフォルトはslate-800
   const router = useRouter();
   const supabase = createClient();
@@ -151,7 +153,8 @@ const Header: React.FC = () => {
                     color: getTextColor(themeColor),
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = getHoverColor(themeColor);
+                    e.currentTarget.style.backgroundColor =
+                      getHoverColor(themeColor);
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.backgroundColor = "transparent";
@@ -230,7 +233,8 @@ const Header: React.FC = () => {
                               getHoverColor(themeColor);
                           }}
                           onMouseLeave={(e) => {
-                            e.currentTarget.style.backgroundColor = "transparent";
+                            e.currentTarget.style.backgroundColor =
+                              "transparent";
                           }}
                         >
                           <FontAwesomeIcon icon={faGear} />
@@ -245,7 +249,8 @@ const Header: React.FC = () => {
                               getHoverColor(themeColor);
                           }}
                           onMouseLeave={(e) => {
-                            e.currentTarget.style.backgroundColor = "transparent";
+                            e.currentTarget.style.backgroundColor =
+                              "transparent";
                           }}
                         >
                           <FontAwesomeIcon icon={faRightFromBracket} />

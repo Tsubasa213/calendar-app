@@ -235,9 +235,7 @@ export default function CalendarsPage() {
                   : "カレンダー作成上限（2つ）に達しました"
               }
             >
-              {stats?.can_create_more
-                ? "+ 新規作成"
-                : "作成上限に達しました"}
+              {stats?.can_create_more ? "+ 新規作成" : "作成上限に達しました"}
             </button>
           </div>
           {calendars.length === 0 ? (
