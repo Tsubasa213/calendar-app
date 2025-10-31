@@ -1,97 +1,51 @@
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { Event, DbEvent, EventFormData } from "@/types/event.types";
+import { Event, DbEvent, EventFormData, EventType } from "@/types/event.types";
 import {
   convertDbEventToCalendarEvent,
   updateEventInList,
 } from "@/lib/utils/eventUtils";
 import { calculateDaysDiff } from "@/lib/utils/dateUtils";
+import { useCalendar } from "@/app/context/CalendarContext";
 
-export function useEvents() {
+export function useEvents(eventTypes: EventType[]) {
   const supabase = createClient();
   const [events, setEvents] = useState<Event[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [defaultCalendarId, setDefaultCalendarId] = useState<string | null>(
-    null
-  );
+  const { currentCalendarId } = useCalendar();
 
-  // データベースからイベントを取得
   useEffect(() => {
     const fetchEvents = async () => {
+      if (!currentCalendarId) {
+        setEvents([]);
+        setIsLoading(false);
+        return;
+      }
+
+      setIsLoading(true);
       try {
-        // まず、デフォルトのカレンダーを取得または作成
         const {
           data: { user },
         } = await supabase.auth.getUser();
 
         if (!user) {
-          // ユーザーがログインしていない場合は、サンプルデータを表示
           setEvents([
             {
               id: "1",
-              title: "会議",
-              start: "2025-10-02T10:00:00",
-              end: "2025-10-02T11:00:00",
+              title: "サンプル: 会議",
+              start: new Date().toISOString().split("T")[0] + "T10:00:00",
+              end: new Date().toISOString().split("T")[0] + "T11:00:00",
               color: "#3B82F6",
-            },
-            {
-              id: "2",
-              title: "ランチ",
-              start: "2025-10-05T12:00:00",
-              end: "2025-10-05T13:00:00",
-              color: "#10B981",
-            },
-            {
-              id: "3",
-              title: "全日イベント",
-              start: "2025-10-08",
-              allDay: true,
-              color: "#F59E0B",
             },
           ]);
           setIsLoading(false);
           return;
         }
 
-        // カレンダーを取得または作成
-        let { data: calendars } = await supabase
-          .from("calendars")
-          .select("*")
-          .eq("owner_id", user.id)
-          .limit(1);
-
-        let calendarId: string;
-
-        if (!calendars || calendars.length === 0) {
-          // デフォルトカレンダーを作成
-          const { data: newCalendar, error: createError } = await supabase
-            .from("calendars")
-            .insert({
-              name: "マイカレンダー",
-              owner_id: user.id,
-              color: "#3B82F6",
-            })
-            .select()
-            .single();
-
-          if (createError) {
-            console.error("カレンダー作成エラー:", createError);
-            setIsLoading(false);
-            return;
-          }
-
-          calendarId = newCalendar.id;
-        } else {
-          calendarId = calendars[0].id;
-        }
-
-        setDefaultCalendarId(calendarId);
-
-        // イベントを取得
         const { data: eventsData, error: eventsError } = await supabase
           .from("events")
           .select("*")
-          .eq("calendar_id", calendarId);
+          .eq("calendar_id", currentCalendarId);
 
         if (eventsError) {
           console.error("イベント取得エラー:", eventsError);
@@ -99,7 +53,6 @@ export function useEvents() {
           return;
         }
 
-        // データベースのイベントをFullCalendar形式に変換
         const formattedEvents: Event[] = (eventsData || []).map(
           (event: DbEvent) => convertDbEventToCalendarEvent(event)
         );
@@ -113,10 +66,17 @@ export function useEvents() {
     };
 
     fetchEvents();
-  }, [supabase]);
+  }, [supabase, currentCalendarId]);
 
   // イベントを追加
   const addEvent = async (formData: EventFormData) => {
+    if (!currentCalendarId) {
+      throw new Error("カレンダーが選択されていません");
+    }
+
+    const selectedGenre = eventTypes.find((type) => type.id === formData.genre);
+    const eventColor = selectedGenre ? selectedGenre.color : "#3B82F6";
+
     try {
       const {
         data: { user },
@@ -129,40 +89,38 @@ export function useEvents() {
         formData.endDate || formData.startDate
       );
 
-      // 全日でない場合で複数日にまたがる場合は、各日に予定を複製
+      // (複数日イベントのロジックは変更なし ... )
       if (!formData.allDay && daysDiff > 0) {
+        // ... (省略) ...
         const newEvents: Event[] = [];
 
         for (let i = 0; i <= daysDiff; i++) {
           const currentDate = new Date(startDate);
           currentDate.setDate(startDate.getDate() + i);
           const dateStr = currentDate.toISOString().split("T")[0];
+          const startTime = `${dateStr}T${formData.startTime || "09:00"}:00`;
+          const endTime = `${dateStr}T${formData.endTime || "10:00"}:00`;
 
-          if (!user || !defaultCalendarId) {
-            // ローカル保存
+          if (!user) {
             const event: Event = {
               id: `${Date.now()}_${i}`,
               title: formData.title,
-              start: `${dateStr}T${formData.startTime || "09:00"}:00`,
-              end: `${dateStr}T${formData.endTime || "10:00"}:00`,
+              start: startTime,
+              end: endTime,
               allDay: false,
-              color: "#3B82F6",
+              color: eventColor,
             };
             newEvents.push(event);
           } else {
-            // データベースに保存
-            const startTime = `${dateStr}T${formData.startTime || "09:00"}:00`;
-            const endTime = `${dateStr}T${formData.endTime || "10:00"}:00`;
-
             const { data: eventData, error } = await supabase
               .from("events")
               .insert({
-                calendar_id: defaultCalendarId,
+                calendar_id: currentCalendarId,
                 title: formData.title,
                 start_time: startTime,
                 end_time: endTime,
                 is_all_day: false,
-                color: "#3B82F6",
+                color: eventColor,
                 created_by: user.id,
                 description: formData.memo || null,
               })
@@ -173,49 +131,14 @@ export function useEvents() {
               console.error("イベント保存エラー:", error);
               continue;
             }
-
-            newEvents.push({
-              id: eventData.id,
-              title: eventData.title,
-              start: eventData.start_time,
-              end: eventData.end_time,
-              allDay: false,
-              color: eventData.color || "#3B82F6",
-            });
+            newEvents.push(convertDbEventToCalendarEvent(eventData));
           }
         }
-
         setEvents([...events, ...newEvents]);
         return;
       }
 
-      // 単一日または全日イベントの場合(従来の処理)
-      if (!user || !defaultCalendarId) {
-        const newEvent: Event = {
-          id: String(Date.now()),
-          title: formData.title,
-          start: formData.allDay
-            ? formData.startDate
-            : `${formData.startDate}T${formData.startTime || "09:00"}:00`,
-          end: formData.allDay
-            ? (() => {
-                // FullCalendar's all-day events require end date to be next day
-                const endDate = new Date(
-                  formData.endDate || formData.startDate
-                );
-                endDate.setDate(endDate.getDate() + 1);
-                return endDate.toISOString().split("T")[0];
-              })()
-            : `${formData.endDate || formData.startDate}T${formData.endTime || "10:00"}:00`,
-          allDay: formData.allDay,
-          color: "#3B82F6",
-        };
-
-        setEvents([...events, newEvent]);
-        return;
-      }
-
-      // データベースに保存
+      // (単一日イベントのロジックは変更なし ...)
       const startTime = formData.allDay
         ? `${formData.startDate}T00:00:00`
         : `${formData.startDate}T${formData.startTime || "09:00"}:00`;
@@ -223,15 +146,36 @@ export function useEvents() {
         ? `${formData.endDate || formData.startDate}T23:59:59`
         : `${formData.endDate || formData.startDate}T${formData.endTime || "10:00"}:00`;
 
+      if (!user) {
+        const newEvent: Event = {
+          id: String(Date.now()),
+          title: formData.title,
+          start: formData.allDay ? formData.startDate : startTime,
+          end: formData.allDay
+            ? (() => {
+                const endDate = new Date(
+                  formData.endDate || formData.startDate
+                );
+                endDate.setDate(endDate.getDate() + 1);
+                return endDate.toISOString().split("T")[0];
+              })()
+            : endTime,
+          allDay: formData.allDay,
+          color: eventColor,
+        };
+        setEvents([...events, newEvent]);
+        return;
+      }
+
       const { data: newEventData, error } = await supabase
         .from("events")
         .insert({
-          calendar_id: defaultCalendarId,
+          calendar_id: currentCalendarId,
           title: formData.title,
           start_time: startTime,
           end_time: endTime,
           is_all_day: formData.allDay,
-          color: "#3B82F6",
+          color: eventColor,
           created_by: user.id,
           description: formData.memo || null,
         })
@@ -242,26 +186,7 @@ export function useEvents() {
         console.error("イベント保存エラー:", error);
         throw new Error("予定の保存に失敗しました");
       }
-
-      // 成功したら画面を更新
-      const newEvent: Event = {
-        id: newEventData.id,
-        title: newEventData.title,
-        start: newEventData.is_all_day
-          ? newEventData.start_time.split("T")[0]
-          : newEventData.start_time,
-        end: newEventData.is_all_day
-          ? (() => {
-              // FullCalendarの全日イベントは終了日を翌日にする必要がある
-              const endDate = new Date(newEventData.end_time.split("T")[0]);
-              endDate.setDate(endDate.getDate() + 1);
-              return endDate.toISOString().split("T")[0];
-            })()
-          : newEventData.end_time,
-        allDay: newEventData.is_all_day,
-        color: newEventData.color || "#3B82F6",
-      };
-
+      const newEvent: Event = convertDbEventToCalendarEvent(newEventData);
       setEvents([...events, newEvent]);
     } catch (error) {
       console.error("予期しないエラー:", error);
@@ -271,13 +196,15 @@ export function useEvents() {
 
   // イベントを削除
   const deleteEvent = async (eventId: string) => {
+    if (!currentCalendarId) {
+      console.warn("カレンダーIDがないためローカル削除のみ実行");
+    }
     try {
       const {
         data: { user },
       } = await supabase.auth.getUser();
 
-      if (user && defaultCalendarId) {
-        // データベースから削除
+      if (user && currentCalendarId) {
         const { error } = await supabase
           .from("events")
           .delete()
@@ -288,8 +215,6 @@ export function useEvents() {
           throw new Error("予定の削除に失敗しました");
         }
       }
-
-      // ローカルの状態から削除
       setEvents(events.filter((e) => e.id !== eventId));
     } catch (error) {
       console.error("予期しないエラー:", error);
@@ -297,20 +222,25 @@ export function useEvents() {
     }
   };
 
-  // イベントを更新（ドラッグ&ドロップ用）
-  const updateEvent = async (
+  // --- ▼ 修正点 1/2: `updateEvent` を `updateEventTime` にリネーム ▼ ---
+  // (ドラッグ&ドロップ用)
+  const updateEventTime = async (
+    // --- ▲ 修正点 1/2 ▲ ---
     eventId: string,
     newStartTime: string,
     newEndTime: string,
     isAllDay: boolean
   ) => {
+    if (!currentCalendarId) {
+      console.warn("カレンダーIDがないためローカル更新のみ実行");
+    }
+
     try {
       const {
         data: { user },
       } = await supabase.auth.getUser();
 
-      if (!user || !defaultCalendarId) {
-        // ローカルのみで更新
+      if (!user || !currentCalendarId) {
         const updatedEvents = updateEventInList(
           events,
           eventId,
@@ -322,12 +252,12 @@ export function useEvents() {
         return;
       }
 
-      // データベースを更新
       const { error } = await supabase
         .from("events")
         .update({
           start_time: newStartTime,
           end_time: newEndTime,
+          is_all_day: isAllDay,
         })
         .eq("id", eventId);
 
@@ -336,7 +266,6 @@ export function useEvents() {
         throw new Error("予定の更新に失敗しました");
       }
 
-      // 成功時、ローカルの状態も更新
       const updatedEvents = updateEventInList(
         events,
         eventId,
@@ -351,11 +280,63 @@ export function useEvents() {
     }
   };
 
+  // --- ▼ 修正点 2/2: 新しい関数 `updateEventDetails` を追加 ▼ ---
+  // (モーダル編集用)
+  const updateEventDetails = async (formData: EventFormData) => {
+    if (!formData.id || !currentCalendarId) {
+      throw new Error("更新対象のIDまたはカレンダーIDがありません");
+    }
+
+    const selectedGenre = eventTypes.find((type) => type.id === formData.genre);
+    const eventColor = selectedGenre ? selectedGenre.color : "#3B82F6";
+
+    try {
+      // フォームデータからDB保存用の形式に変換
+      const startTime = formData.allDay
+        ? `${formData.startDate}T00:00:00`
+        : `${formData.startDate}T${formData.startTime || "09:00"}:00`;
+      const endTime = formData.allDay
+        ? `${formData.endDate || formData.startDate}T23:59:59`
+        : `${formData.endDate || formData.startDate}T${formData.endTime || "10:00"}:00`;
+
+      const { data: updatedEventData, error } = await supabase
+        .from("events")
+        .update({
+          title: formData.title,
+          start_time: startTime,
+          end_time: endTime,
+          is_all_day: formData.allDay,
+          color: eventColor,
+          description: formData.memo || null,
+          // calendar_id, created_by は変更しない
+        })
+        .eq("id", formData.id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error("イベント更新エラー:", error);
+        throw new Error("予定の更新に失敗しました");
+      }
+
+      // 成功時、ローカルの状態も更新
+      const convertedEvent = convertDbEventToCalendarEvent(updatedEventData);
+      setEvents(
+        events.map((e) => (e.id === convertedEvent.id ? convertedEvent : e))
+      );
+    } catch (error) {
+      console.error("予期しないエラー:", error);
+      throw error;
+    }
+  };
+  // --- ▲ 修正点 2/2 ▲ ---
+
   return {
     events,
     isLoading,
     addEvent,
     deleteEvent,
-    updateEvent,
+    updateEventTime, // リネーム
+    updateEventDetails, // 新しくエクスポート
   };
 }

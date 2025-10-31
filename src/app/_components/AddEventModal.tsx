@@ -4,7 +4,7 @@ import { EventFormData, EventType } from "@/types/event.types";
 interface AddEventModalProps {
   isOpen: boolean;
   formData: EventFormData;
-  eventTypes: EventType[]; // 追加
+  eventTypes: EventType[];
   onClose: () => void;
   onSubmit: () => void;
   onFormChange: (updates: Partial<EventFormData>) => void;
@@ -13,12 +13,11 @@ interface AddEventModalProps {
 export const AddEventModal: React.FC<AddEventModalProps> = ({
   isOpen,
   formData,
-  eventTypes, // 追加
+  eventTypes,
   onClose,
   onSubmit,
   onFormChange,
 }) => {
-  console.log("AddEventModal - eventTypes:", eventTypes);
   if (!isOpen) return null;
 
   const handleSubmit = () => {
@@ -26,11 +25,16 @@ export const AddEventModal: React.FC<AddEventModalProps> = ({
     onSubmit();
   };
 
+  const isEditing = !!formData.id;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-lg bg-white p-6 shadow-xl">
+      {/* --- 修正点: PCでもスクロールしないよう高さを max-h-[95vh] に制限 --- */}
+      <div className="max-h-[95vh] w-full max-w-lg overflow-y-auto rounded-lg bg-white p-6 shadow-xl">
         <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-xl font-bold">予定を追加</h3>
+          <h3 className="text-xl font-bold">
+            {isEditing ? "予定を編集" : "予定を追加"}
+          </h3>
           <button
             onClick={onClose}
             className="text-gray-500 hover:text-gray-700"
@@ -52,6 +56,7 @@ export const AddEventModal: React.FC<AddEventModalProps> = ({
         </div>
 
         <div className="space-y-4">
+          {/* ... (タイトル, 終日, 開始/終了日時 フォームは変更なし) ... */}
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">
               予定のタイトル
@@ -124,7 +129,7 @@ export const AddEventModal: React.FC<AddEventModalProps> = ({
             </div>
           </div>
 
-          {/* ジャンル選択 - カスタムジャンルを使用 */}
+          {/* ジャンル選択 */}
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">
               予定のジャンル
@@ -149,27 +154,31 @@ export const AddEventModal: React.FC<AddEventModalProps> = ({
             )}
           </div>
 
-          {/* 選択されたジャンルのプレビュー */}
-          {formData.genre && eventTypes.length > 0 && (
-            <div className="rounded-lg bg-gray-50 p-3">
-              <div className="mb-1 text-xs font-medium text-gray-600">
-                選択中のジャンル:
+          {/* --- ▼ 修正点: プレビューエリアに固定の高さ(h-14)を設定 ▼ --- */}
+          <div className="h-14">
+            {/* 選択されたジャンルのプレビュー */}
+            {formData.genre && eventTypes.length > 0 && (
+              <div className="rounded-lg bg-gray-50 p-3">
+                <div className="mb-1 text-xs font-medium text-gray-600">
+                  選択中のジャンル:
+                </div>
+                {(() => {
+                  const selectedType = eventTypes.find(
+                    (t) => t.id === formData.genre
+                  );
+                  return selectedType ? (
+                    <div
+                      className="inline-flex items-center gap-1 rounded px-2 py-1 text-sm font-medium text-white"
+                      style={{ backgroundColor: selectedType.color }}
+                    >
+                      {selectedType.name}
+                    </div>
+                  ) : null;
+                })()}
               </div>
-              {(() => {
-                const selectedType = eventTypes.find(
-                  (t) => t.id === formData.genre
-                );
-                return selectedType ? (
-                  <div
-                    className="inline-flex items-center gap-1 rounded px-2 py-1 text-sm font-medium text-white"
-                    style={{ backgroundColor: selectedType.color }}
-                  >
-                    {selectedType.name}
-                  </div>
-                ) : null;
-              })()}
-            </div>
-          )}
+            )}
+          </div>
+          {/* --- ▲ 修正点 ▲ --- */}
 
           {/* メモ */}
           <div>
@@ -197,7 +206,7 @@ export const AddEventModal: React.FC<AddEventModalProps> = ({
               disabled={!formData.title || !formData.startDate}
               className="flex-1 rounded-lg border border-blue-500/30 bg-blue-500/10 px-4 py-2 text-blue-600 backdrop-blur-sm transition-all hover:border-blue-500/50 hover:bg-blue-500/20 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              追加
+              {isEditing ? "保存" : "追加"}
             </button>
           </div>
         </div>

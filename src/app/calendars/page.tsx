@@ -22,7 +22,6 @@ import EventTypeManager from "@/app/_components/EventTypeManager";
 import EditCalendarModal from "@/app/_components/EditCalendarModal";
 import { EventType } from "@/types/event.types";
 import { createClient } from "@/lib/supabase/client";
-// 1. アイコンをインポート
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faShareAlt } from "@fortawesome/free-solid-svg-icons";
 
@@ -238,7 +237,39 @@ export default function CalendarsPage() {
   return (
     <div className="min-h-screen overflow-y-auto bg-gray-50 p-4 pb-20 lg:pb-4">
       <div className="mx-auto max-w-4xl">
-        {/* ... (統計情報、招待コード参加フォームは省略) ... */}
+        <div className="mb-6 flex items-center justify-between">
+          <h1 className="text-2xl font-bold text-gray-900">カレンダー管理</h1>
+          <button
+            onClick={() => router.push("/")}
+            className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100"
+          >
+            戻る
+          </button>
+        </div>
+
+        {/* 統計情報 */}
+        {stats && (
+          <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div className="rounded-lg bg-white p-4 shadow">
+              <p className="text-sm text-gray-600">作成したカレンダー</p>
+              <p className="mt-1 text-2xl font-bold text-gray-900">
+                {stats.owned_calendars}/2
+              </p>
+            </div>
+            <div className="rounded-lg bg-white p-4 shadow">
+              <p className="text-sm text-gray-600">参加中のカレンダー</p>
+              <p className="mt-1 text-2xl font-bold text-gray-900">
+                {stats.participated_calendars}/3
+              </p>
+            </div>
+            <div className="rounded-lg bg-white p-4 shadow">
+              <p className="text-sm text-gray-600">合計</p>
+              <p className="mt-1 text-2xl font-bold text-gray-900">
+                {calendars.length}
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* 招待コードで参加 */}
         <div className="mb-6 rounded-lg bg-white p-6 shadow">
@@ -274,13 +305,15 @@ export default function CalendarsPage() {
                 <p className="text-sm text-green-800">{joinSuccess}</p>
               </div>
             )}
+            {/* --- ▼ 修正点: ボタンクラスを変更 ▼ --- */}
             <button
               type="submit"
               disabled={joiningCalendar || !stats?.can_join_more}
-              className="rounded-lg bg-blue-600 px-4 py-2 font-medium text-white transition-colors hover:bg-blue-700 disabled:bg-gray-300"
+              className="rounded-lg border border-blue-500/30 bg-blue-500/10 px-4 py-2 font-medium text-blue-600 backdrop-blur-sm transition-all hover:border-blue-500/50 hover:bg-blue-500/20 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {joiningCalendar ? "参加中..." : "参加する"}
             </button>
+            {/* --- ▲ 修正点 ▲ --- */}
           </form>
         </div>
 
@@ -290,12 +323,13 @@ export default function CalendarsPage() {
             <h2 className="text-lg font-semibold text-gray-900">
               マイカレンダー
             </h2>
+            {/* --- ▼ 修正点: ボタンクラスを変更 ▼ --- */}
             <button
               onClick={() => setShowCreateModal(true)}
               disabled={!stats?.can_create_more}
               className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
                 stats?.can_create_more
-                  ? "bg-blue-600 text-white hover:bg-blue-700"
+                  ? "border border-blue-500/30 bg-blue-500/10 text-blue-600 backdrop-blur-sm hover:border-blue-500/50 hover:bg-blue-500/20"
                   : "cursor-not-allowed bg-gray-300 text-gray-500"
               }`}
               title={
@@ -306,6 +340,7 @@ export default function CalendarsPage() {
             >
               {stats?.can_create_more ? "+ 新規作成" : "作成上限に達しました"}
             </button>
+            {/* --- ▲ 修正点 ▲ --- */}
           </div>
           {calendars.length === 0 ? (
             <div className="py-8 text-center text-gray-500">
@@ -319,7 +354,6 @@ export default function CalendarsPage() {
               {calendars.map((calendar) => {
                 const owner = isOwner(calendar);
                 return (
-                  // 3. このボタンは編集モーダルを開く
                   <button
                     key={calendar.id}
                     className="mb-2 w-full rounded-lg border border-gray-200 p-4 text-left transition-shadow hover:shadow-md focus:outline-none"
@@ -327,9 +361,7 @@ export default function CalendarsPage() {
                       handleOpenEditModal(calendar);
                     }}
                   >
-                    {/* 4. flexコンテナで両端揃えに */}
                     <div className="flex items-center justify-between gap-3">
-                      {/* 左側の情報（アイコン、名前など） */}
                       <div className="flex flex-1 items-start gap-3">
                         <span className="text-3xl">
                           {calendar.icon || "📅"}
@@ -356,13 +388,12 @@ export default function CalendarsPage() {
                         </div>
                       </div>
 
-                      {/* 5. 右側の共有ボタン */}
                       <div className="shrink-0">
                         <button
                           type="button"
                           onClick={(e) => {
-                            e.stopPropagation(); // 親ボタンのonClickイベントを防ぐ
-                            setShareCalendar(calendar); // 共有モーダルを開く
+                            e.stopPropagation();
+                            setShareCalendar(calendar);
                           }}
                           className="ml-4 rounded p-2 text-gray-400 hover:bg-blue-50 hover:text-blue-600"
                           title="招待URLを共有"
@@ -398,7 +429,6 @@ export default function CalendarsPage() {
         />
       )}
 
-      {/* 編集モーダル */}
       {editCalendarId && (
         <EditCalendarModal
           isOpen={!!editCalendarId}
