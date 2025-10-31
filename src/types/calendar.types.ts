@@ -19,6 +19,7 @@ export interface Calendar {
   owner_id: string;
   is_public: boolean;
   invite_code?: string;
+  is_default: boolean; // 1. is_default を追加
   created_at: string;
   updated_at: string;
 }
