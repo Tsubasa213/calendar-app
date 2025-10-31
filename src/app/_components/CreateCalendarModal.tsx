@@ -21,7 +21,7 @@ const CALENDAR_ICONS = [
   "🏠",
   "🎓",
   "💪",
-  "🧑‍💻",
+  "❤️",
   "👨‍👩‍👧‍👦",
   "🏢",
   "🏫",
@@ -41,7 +41,6 @@ const CALENDAR_ICONS = [
   "🚗",
   "✈️",
   "📚",
-  "♡",
 ];
 
 export default function CreateCalendarModal({

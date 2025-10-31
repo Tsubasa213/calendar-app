@@ -1,9 +1,10 @@
 import React from "react";
-import { EventFormData } from "@/types/event.types";
+import { EventFormData, EventType } from "@/types/event.types";
 
 interface AddEventModalProps {
   isOpen: boolean;
   formData: EventFormData;
+  eventTypes: EventType[]; // 追加
   onClose: () => void;
   onSubmit: () => void;
   onFormChange: (updates: Partial<EventFormData>) => void;
@@ -12,10 +13,12 @@ interface AddEventModalProps {
 export const AddEventModal: React.FC<AddEventModalProps> = ({
   isOpen,
   formData,
+  eventTypes, // 追加
   onClose,
   onSubmit,
   onFormChange,
 }) => {
+  console.log("AddEventModal - eventTypes:", eventTypes);
   if (!isOpen) return null;
 
   const handleSubmit = () => {
@@ -121,24 +124,52 @@ export const AddEventModal: React.FC<AddEventModalProps> = ({
             </div>
           </div>
 
-          {/* ジャンル選択 */}
+          {/* ジャンル選択 - カスタムジャンルを使用 */}
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">
               予定のジャンル
             </label>
-            <select
-              value={formData.genre}
-              onChange={(e) => onFormChange({ genre: e.target.value })}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-            >
-              <option value="">選択してください</option>
-              <option value="work">仕事</option>
-              <option value="personal">プライベート</option>
-              <option value="meeting">会議</option>
-              <option value="event">イベント</option>
-              <option value="other">その他</option>
-            </select>
+            {eventTypes.length > 0 ? (
+              <select
+                value={formData.genre}
+                onChange={(e) => onFormChange({ genre: e.target.value })}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              >
+                <option value="">選択してください</option>
+                {eventTypes.map((type) => (
+                  <option key={type.id} value={type.id}>
+                    {type.name}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <div className="rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-500">
+                カレンダー設定でジャンルを作成してください
+              </div>
+            )}
           </div>
+
+          {/* 選択されたジャンルのプレビュー */}
+          {formData.genre && eventTypes.length > 0 && (
+            <div className="rounded-lg bg-gray-50 p-3">
+              <div className="mb-1 text-xs font-medium text-gray-600">
+                選択中のジャンル:
+              </div>
+              {(() => {
+                const selectedType = eventTypes.find(
+                  (t) => t.id === formData.genre
+                );
+                return selectedType ? (
+                  <div
+                    className="inline-flex items-center gap-1 rounded px-2 py-1 text-sm font-medium text-white"
+                    style={{ backgroundColor: selectedType.color }}
+                  >
+                    {selectedType.name}
+                  </div>
+                ) : null;
+              })()}
+            </div>
+          )}
 
           {/* メモ */}
           <div>
