@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/context/AuthContext";
+import { useCalendar } from "@/app/context/CalendarContext";
 import {
   getUserCalendars,
   getCalendarStats,
@@ -17,10 +18,15 @@ import type {
 } from "@/types/calendar.types";
 import CreateCalendarModal from "@/app/_components/CreateCalendarModal";
 import ShareCalendarModal from "@/app/_components/ShareCalendarModal";
+import EventTypeManager from "@/app/_components/EventTypeManager";
+import EditCalendarModal from "@/app/_components/EditCalendarModal";
+import { EventType } from "@/types/event.types";
+("@/app/context/CalendarContext");
 
 export default function CalendarsPage() {
   const router = useRouter();
   const { user } = useAuth();
+  const { setCurrentCalendarId } = useCalendar();
   const [calendars, setCalendars] = useState<CalendarWithMembers[]>([]);
   const [stats, setStats] = useState<CalendarStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -31,6 +37,13 @@ export default function CalendarsPage() {
   const [joinError, setJoinError] = useState("");
   const [joinSuccess, setJoinSuccess] = useState("");
   const [joiningCalendar, setJoiningCalendar] = useState(false);
+  const [editCalendarId, setEditCalendarId] = useState<string | null>(null);
+  const [calendarEventTypes, setCalendarEventTypes] = useState<
+    Record<string, EventType[]>
+  >({});
+  const [editCalendarData, setEditCalendarData] = useState<
+    Record<string, { name: string; description: string; icon: string }>
+  >({});
 
   useEffect(() => {
     loadCalendars();
@@ -124,6 +137,11 @@ export default function CalendarsPage() {
 
   const isOwner = (calendar: CalendarWithMembers) => {
     return calendar.owner_id === user?.id;
+  };
+
+  const handleCalendarClick = (calendarId: string) => {
+    setCurrentCalendarId(calendarId);
+    router.push("/");
   };
 
   if (loading) {
@@ -249,105 +267,48 @@ export default function CalendarsPage() {
             <div className="space-y-4">
               {calendars.map((calendar) => {
                 const owner = isOwner(calendar);
+                const eventTypes = calendarEventTypes[calendar.id] || [];
+                const editData = editCalendarData[calendar.id] || {
+                  name: calendar.name,
+                  description: calendar.description || "",
+                  icon: calendar.icon || "📅",
+                };
                 return (
-                  <div
+                  <button
                     key={calendar.id}
-                    className="rounded-lg border border-gray-200 p-4 transition-shadow hover:shadow-md"
+                    className="mb-2 w-full rounded-lg border border-gray-200 p-4 text-left transition-shadow hover:shadow-md focus:outline-none"
+                    onClick={() => {
+                      if (editCalendarId === calendar.id) {
+                        handleCalendarClick(calendar.id);
+                      } else {
+                        setEditCalendarId(calendar.id);
+                      }
+                    }}
                   >
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start gap-3">
-                        <span className="text-3xl">
-                          {calendar.icon || "📅"}
-                        </span>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <h3 className="font-semibold text-gray-900">
-                              {calendar.name}
-                            </h3>
-                            {owner && (
-                              <span className="rounded bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800">
-                                オーナー
-                              </span>
-                            )}
-                          </div>
-                          {calendar.description && (
-                            <p className="mt-1 text-sm text-gray-600">
-                              {calendar.description}
-                            </p>
+                    <div className="flex items-start gap-3">
+                      <span className="text-3xl">{editData.icon}</span>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-semibold text-gray-900">
+                            {editData.name}
+                          </h3>
+                          {owner && (
+                            <span className="rounded bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800">
+                              オーナー
+                            </span>
                           )}
-                          <p className="mt-2 text-sm text-gray-500">
-                            メンバー: {calendar.member_count}/8
-                          </p>
                         </div>
-                      </div>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => setShareCalendar(calendar)}
-                          className="rounded-md bg-gray-100 p-2 text-gray-600 transition-colors hover:bg-gray-200"
-                          title="共有"
-                        >
-                          <svg
-                            className="size-5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
-                            />
-                          </svg>
-                        </button>
-                        {owner ? (
-                          <button
-                            onClick={() =>
-                              handleDeleteCalendar(calendar.id, calendar.name)
-                            }
-                            className="rounded-md bg-red-100 p-2 text-red-600 transition-colors hover:bg-red-200"
-                            title="削除"
-                          >
-                            <svg
-                              className="size-5"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                              />
-                            </svg>
-                          </button>
-                        ) : (
-                          <button
-                            onClick={() =>
-                              handleLeaveCalendar(calendar.id, calendar.name)
-                            }
-                            className="rounded-md bg-yellow-100 p-2 text-yellow-600 transition-colors hover:bg-yellow-200"
-                            title="退出"
-                          >
-                            <svg
-                              className="size-5"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                              />
-                            </svg>
-                          </button>
+                        {editData.description && (
+                          <p className="mt-1 text-sm text-gray-600">
+                            {editData.description}
+                          </p>
                         )}
+                        <p className="mt-2 text-sm text-gray-500">
+                          メンバー: {calendar.member_count}/8
+                        </p>
                       </div>
                     </div>
-                  </div>
+                  </button>
                 );
               })}
             </div>
@@ -368,6 +329,33 @@ export default function CalendarsPage() {
           isOpen={!!shareCalendar}
           calendar={shareCalendar}
           onClose={() => setShareCalendar(null)}
+        />
+      )}
+
+      {/* 編集モーダル */}
+      {editCalendarId && (
+        <EditCalendarModal
+          isOpen={!!editCalendarId}
+          calendar={calendars.find((c) => c.id === editCalendarId)!}
+          eventTypes={calendarEventTypes[editCalendarId] || []}
+          onChangeEventTypes={(types) =>
+            setCalendarEventTypes({
+              ...calendarEventTypes,
+              [editCalendarId]: types,
+            })
+          }
+          onClose={() => setEditCalendarId(null)}
+          onSave={({ name, description, icon, eventTypes }) => {
+            setEditCalendarData({
+              ...editCalendarData,
+              [editCalendarId]: { name, description, icon },
+            });
+            setCalendarEventTypes({
+              ...calendarEventTypes,
+              [editCalendarId]: eventTypes,
+            });
+            setEditCalendarId(null);
+          }}
         />
       )}
     </div>

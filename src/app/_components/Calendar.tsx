@@ -18,6 +18,7 @@ import { getTodayString } from "@/lib/utils/dateUtils";
 const CalendarComponent: React.FC<CalendarComponentProps> = ({
   onCalendarReady,
   onAddEventReady,
+  eventTypes,
 }) => {
   const [isClient, setIsClient] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
@@ -386,6 +387,7 @@ const CalendarComponent: React.FC<CalendarComponentProps> = ({
       <AddEventModal
         isOpen={isAddEventModalOpen}
         formData={formData}
+        eventTypes={eventTypes}
         onClose={closeAddEventModal}
         onSubmit={handleAddEvent}
         onFormChange={handleFormChange}

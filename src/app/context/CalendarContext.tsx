@@ -1,55 +1,118 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from "react";
+import { EventType } from "@/types/event.types";
+import { createClient } from "@/lib/supabase/client";
+import { useAuth } from "@/app/context/AuthContext";
 
 interface CalendarContextType {
   goToToday: (() => void) | null;
-  setGoToToday: (fn: () => void) => void;
+  setGoToToday: (callback: () => void) => void;
   openAddEventModal: (() => void) | null;
-  setOpenAddEventModal: (fn: () => void) => void;
+  setOpenAddEventModal: (callback: () => void) => void;
   currentCalendarId: string | null;
   setCurrentCalendarId: (id: string | null) => void;
+  eventTypes: EventType[];
+  setEventTypes: (types: EventType[]) => void;
+  refreshEventTypes: () => Promise<void>;
 }
 
 const CalendarContext = createContext<CalendarContextType | undefined>(
   undefined
 );
 
-export const CalendarProvider: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => {
-  const [goToToday, setGoToTodayFn] = useState<(() => void) | null>(null);
-  const [openAddEventModal, setOpenAddEventModalFn] = useState<
+export function CalendarProvider({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
+  const supabase = createClient();
+
+  const [goToToday, setGoToTodayState] = useState<(() => void) | null>(null);
+  const [openAddEventModal, setOpenAddEventModalState] = useState<
     (() => void) | null
   >(null);
-  const [currentCalendarId, setCurrentCalendarIdState] = useState<
-    string | null
-  >(null);
+  const [currentCalendarId, setCurrentCalendarId] = useState<string | null>(
+    null
+  );
+  const [eventTypes, setEventTypes] = useState<EventType[]>([]);
 
-  // Load current calendar ID from localStorage on mount
+  // カレンダーIDが変わったらジャンルを取得
   useEffect(() => {
-    const savedCalendarId = localStorage.getItem("currentCalendarId");
-    if (savedCalendarId) {
-      setCurrentCalendarIdState(savedCalendarId);
-    }
-  }, []);
-
-  const setGoToToday = (fn: () => void) => {
-    setGoToTodayFn(() => fn);
-  };
-
-  const setOpenAddEventModal = (fn: () => void) => {
-    setOpenAddEventModalFn(() => fn);
-  };
-
-  const setCurrentCalendarId = (id: string | null) => {
-    setCurrentCalendarIdState(id);
-    if (id) {
-      localStorage.setItem("currentCalendarId", id);
+    if (currentCalendarId) {
+      refreshEventTypes();
     } else {
-      localStorage.removeItem("currentCalendarId");
+      setEventTypes([]);
+    }
+  }, [currentCalendarId]);
+
+  // 初回読み込み時にデフォルトカレンダーを設定
+  useEffect(() => {
+    if (user && !currentCalendarId) {
+      loadDefaultCalendar();
+    }
+  }, [user]);
+
+  const loadDefaultCalendar = async () => {
+    try {
+      // LocalStorageから最後に開いたカレンダーを取得
+      const savedCalendarId = localStorage.getItem("currentCalendarId");
+      if (savedCalendarId) {
+        setCurrentCalendarId(savedCalendarId);
+        return;
+      }
+
+      // なければユーザーが所有する最初のカレンダーを取得
+      const { data, error } = await supabase
+        .from("calendars")
+        .select("id")
+        .eq("owner_id", user?.id)
+        .limit(1)
+        .single();
+
+      if (error) throw error;
+      if (data?.id) {
+        setCurrentCalendarId(data.id);
+        localStorage.setItem("currentCalendarId", data.id);
+      }
+    } catch (error) {
+      console.error("デフォルトカレンダー取得エラー:", error);
     }
   };
+
+  const refreshEventTypes = async () => {
+    if (!currentCalendarId) {
+      console.log("refreshEventTypes: カレンダーIDがありません");
+      return;
+    }
+    console.log("refreshEventTypes: カレンダーID =", currentCalendarId);
+    try {
+      const { data, error } = await supabase
+        .from("event_types")
+        .select("*")
+        .eq("calendar_id", currentCalendarId)
+        .order("created_at", { ascending: true });
+      console.log("Supabaseから取得したデータ:", data);
+      console.log("エラー:", error);
+      if (error) throw error;
+      setEventTypes(data || []);
+    } catch (error) {
+      console.error("ジャンル取得エラー:", error);
+      setEventTypes([]);
+    }
+  };
+
+  const setGoToToday = (callback: () => void) => {
+    setGoToTodayState(() => callback);
+  };
+
+  const setOpenAddEventModal = (callback: () => void) => {
+    setOpenAddEventModalState(() => callback);
+  };
+
+  // カレンダーIDが変わったらLocalStorageに保存
+  useEffect(() => {
+    if (currentCalendarId) {
+      localStorage.setItem("currentCalendarId", currentCalendarId);
+    }
+  }, [currentCalendarId]);
 
   return (
     <CalendarContext.Provider
@@ -60,17 +123,20 @@ export const CalendarProvider: React.FC<{ children: React.ReactNode }> = ({
         setOpenAddEventModal,
         currentCalendarId,
         setCurrentCalendarId,
+        eventTypes,
+        setEventTypes,
+        refreshEventTypes,
       }}
     >
       {children}
     </CalendarContext.Provider>
   );
-};
+}
 
-export const useCalendar = () => {
+export function useCalendar() {
   const context = useContext(CalendarContext);
   if (context === undefined) {
     throw new Error("useCalendar must be used within a CalendarProvider");
   }
   return context;
-};
+}
