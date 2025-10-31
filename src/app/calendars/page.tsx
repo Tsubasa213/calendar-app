@@ -23,7 +23,9 @@ import EditCalendarModal from "@/app/_components/EditCalendarModal";
 import { EventType } from "@/types/event.types";
 import { createClient } from "@/lib/supabase/client";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faShareAlt } from "@fortawesome/free-solid-svg-icons";
+// --- ▼ 修正点 1/6: faTrash をインポート ▼ ---
+import { faShareAlt, faTrash } from "@fortawesome/free-solid-svg-icons";
+// --- ▲ 修正点 1/6 ▲ ---
 
 export default function CalendarsPage() {
   const router = useRouter();
@@ -88,7 +90,7 @@ export default function CalendarsPage() {
       setEditCalendarId(calendar.id);
     } catch (error) {
       console.error("Failed to load event types:", error);
-      alert("ジャンルの読み込みに失敗しました");
+      // alert("ジャンルの読み込みに失敗しました"); // アラートなし
     }
   };
 
@@ -140,10 +142,10 @@ export default function CalendarsPage() {
       }
 
       setEditCalendarId(null);
-      alert("カレンダー設定を保存しました");
+      // alert("カレンダー設定を保存しました"); // アラートなし
     } catch (error: any) {
       console.error("Save error:", error);
-      alert("保存に失敗しました: " + error.message);
+      // alert("保存に失敗しました: " + error.message); // アラートなし
     }
   };
 
@@ -152,39 +154,85 @@ export default function CalendarsPage() {
     loadCalendars();
   };
 
+  // --- ▼ 修正点 2/6: confirm() を削除 ▼ ---
   const handleDeleteCalendar = async (
     calendarId: string,
     calendarName: string
   ) => {
-    if (
-      !confirm(
-        `本当に「${calendarName}」を削除しますか？\nこの操作は取り消せません。`
-      )
-    ) {
-      return;
-    }
+    // if (
+    //   !confirm(
+    //     `本当に「${calendarName}」を削除しますか？\nこの操作は取り消せません。`
+    //   )
+    // ) {
+    //   return;
+    // }
+    // --- ▲ 修正点 2/6 ▲ ---
 
     try {
       await deleteCalendar(calendarId);
-      await loadCalendars();
+
+      // --- ▼ 修正点 3/6: 削除後のカレンダー切り替え処理 ▼ ---
+      const newCalendars = calendars.filter((c) => c.id !== calendarId);
+      setCalendars(newCalendars); // stateを即時更新
+
+      if (calendarId === currentCalendarId) {
+        // デフォルトカレンダー（is_default=true）を探す
+        const defaultCalendar = newCalendars.find(
+          (c) => c.is_default && c.owner_id === user?.id
+        );
+        if (defaultCalendar) {
+          setCurrentCalendarId(defaultCalendar.id);
+        } else if (newCalendars.length > 0) {
+          // デフォルトがない場合、リストの先頭のカレンダーに切り替
+          setCurrentCalendarId(newCalendars[0].id);
+        } else {
+          // カレンダーが0になった場合
+          setCurrentCalendarId(null);
+        }
+      }
+      // --- ▲ 修正点 3/6 ▲ ---
     } catch (error: any) {
-      alert(error.message || "カレンダーの削除に失敗しました");
+      console.error("カレンダーの削除に失敗しました", error);
+      // alert(error.message || "カレンダーの削除に失敗しました"); // アラートなし
     }
   };
 
+  // --- ▼ 修正点 4/6: confirm() を削除 ▼ ---
   const handleLeaveCalendar = async (
     calendarId: string,
     calendarName: string
   ) => {
-    if (!confirm(`本当に「${calendarName}」から退出しますか？`)) {
-      return;
-    }
+    // if (!confirm(`本当に「${calendarName}」から退出しますか？`)) {
+    //   return;
+    // }
+    // --- ▲ 修正点 4/6 ▲ ---
 
     try {
       await leaveCalendar(calendarId);
-      await loadCalendars();
+
+      // --- ▼ 修正点 5/6: 退出後のカレンダー切り替え処理 ▼ ---
+      const newCalendars = calendars.filter((c) => c.id !== calendarId);
+      setCalendars(newCalendars); // stateを即時更新
+
+      if (calendarId === currentCalendarId) {
+        // デフォルトカレンダー（is_default=true）を探す
+        const defaultCalendar = newCalendars.find(
+          (c) => c.is_default && c.owner_id === user?.id
+        );
+        if (defaultCalendar) {
+          setCurrentCalendarId(defaultCalendar.id);
+        } else if (newCalendars.length > 0) {
+          // デフォルトがない場合、リストの先頭のカレンダーに切り替
+          setCurrentCalendarId(newCalendars[0].id);
+        } else {
+          // カレンダーが0になった場合
+          setCurrentCalendarId(null);
+        }
+      }
+      // --- ▲ 修正点 5/6 ▲ ---
     } catch (error: any) {
-      alert(error.message || "カレンダーからの退出に失敗しました");
+      console.error("カレンダーからの退出に失敗しました", error);
+      // alert(error.message || "カレンダーからの退出に失敗しました"); // アラートなし
     }
   };
 
@@ -247,7 +295,6 @@ export default function CalendarsPage() {
           </button>
         </div>
 
-        {/* 統計情報 */}
         {stats && (
           <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div className="rounded-lg bg-white p-4 shadow">
@@ -271,7 +318,6 @@ export default function CalendarsPage() {
           </div>
         )}
 
-        {/* 招待コードで参加 */}
         <div className="mb-6 rounded-lg bg-white p-6 shadow">
           <h2 className="mb-4 text-lg font-semibold text-gray-900">
             招待コードで参加
@@ -305,7 +351,6 @@ export default function CalendarsPage() {
                 <p className="text-sm text-green-800">{joinSuccess}</p>
               </div>
             )}
-            {/* --- ▼ 修正点: ボタンクラスを変更 ▼ --- */}
             <button
               type="submit"
               disabled={joiningCalendar || !stats?.can_join_more}
@@ -313,17 +358,14 @@ export default function CalendarsPage() {
             >
               {joiningCalendar ? "参加中..." : "参加する"}
             </button>
-            {/* --- ▲ 修正点 ▲ --- */}
           </form>
         </div>
 
-        {/* カレンダー一覧 */}
         <div className="rounded-lg bg-white p-6 shadow">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-lg font-semibold text-gray-900">
               マイカレンダー
             </h2>
-            {/* --- ▼ 修正点: ボタンクラスを変更 ▼ --- */}
             <button
               onClick={() => setShowCreateModal(true)}
               disabled={!stats?.can_create_more}
@@ -340,7 +382,6 @@ export default function CalendarsPage() {
             >
               {stats?.can_create_more ? "+ 新規作成" : "作成上限に達しました"}
             </button>
-            {/* --- ▲ 修正点 ▲ --- */}
           </div>
           {calendars.length === 0 ? (
             <div className="py-8 text-center text-gray-500">
@@ -376,6 +417,11 @@ export default function CalendarsPage() {
                                 オーナー
                               </span>
                             )}
+                            {calendar.is_default && (
+                              <span className="rounded bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">
+                                デフォルト
+                              </span>
+                            )}
                           </div>
                           {calendar.description && (
                             <p className="mt-1 text-sm text-gray-600">
@@ -388,22 +434,54 @@ export default function CalendarsPage() {
                         </div>
                       </div>
 
-                      <div className="shrink-0">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setShareCalendar(calendar);
-                          }}
-                          className="ml-4 rounded p-2 text-gray-400 hover:bg-blue-50 hover:text-blue-600"
-                          title="招待URLを共有"
-                        >
-                          <FontAwesomeIcon
-                            icon={faShareAlt}
-                            className="size-5"
-                          />
-                        </button>
+                      {/* --- ▼ 修正点 6/6: 右側のボタンコンテナ ▼ --- */}
+                      <div className="flex shrink-0 items-center gap-1">
+                        {/* 共有ボタン (デフォルトカレンダー以外) */}
+                        {!calendar.is_default && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setShareCalendar(calendar);
+                            }}
+                            className="ml-4 rounded p-2 text-gray-400 hover:bg-blue-50 hover:text-blue-600"
+                            title="招待URLを共有"
+                          >
+                            <FontAwesomeIcon
+                              icon={faShareAlt}
+                              className="size-5"
+                            />
+                          </button>
+                        )}
+
+                        {/* 削除/退出ボタン (デフォルトカレンダー以外) */}
+                        {!calendar.is_default && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation(); // 親の編集モーダルが開かないようにする
+                              if (owner) {
+                                handleDeleteCalendar(
+                                  calendar.id,
+                                  calendar.name
+                                );
+                              } else {
+                                handleLeaveCalendar(calendar.id, calendar.name);
+                              }
+                            }}
+                            className="rounded p-2 text-gray-400 hover:bg-red-50 hover:text-red-600"
+                            title={
+                              owner ? "カレンダーを削除" : "カレンダーから退出"
+                            }
+                          >
+                            <FontAwesomeIcon
+                              icon={faTrash}
+                              className="size-5"
+                            />
+                          </button>
+                        )}
                       </div>
+                      {/* --- ▲ 修正点 6/6 ▲ --- */}
                     </div>
                   </button>
                 );

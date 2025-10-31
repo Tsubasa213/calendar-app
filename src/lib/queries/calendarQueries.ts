@@ -6,103 +6,12 @@ import type {
   UpdateCalendarInput,
   JoinCalendarResult,
   CalendarStats,
-  CalendarMemberWithUser,
+  CalendarMemberWithUser, // 1. このインポートが必要です
 } from "@/types/calendar.types";
 
 const supabase = createClient();
 
-/**
- * Get all calendars for the current user
- */
-export async function getUserCalendars(): Promise<CalendarWithMembers[]> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error("Not authenticated");
-
-  const { data, error } = await supabase
-    .from("calendars")
-    .select(
-      `
-      *,
-      members:calendar_members(
-        *,
-        user:users(*)
-      )
-    `
-    )
-    .order("created_at", { ascending: false });
-
-  if (error) throw error;
-
-  return (data || []).map((calendar: any) => ({
-    ...calendar,
-    member_count: calendar.members?.length || 0,
-  }));
-}
-
-/**
- * Get a single calendar by ID with members
- */
-export async function getCalendarById(
-  id: string
-): Promise<CalendarWithMembers | null> {
-  const { data, error } = await supabase
-    .from("calendars")
-    .select(
-      `
-      *,
-      members:calendar_members(
-        *,
-        user:users(*)
-      )
-    `
-    )
-    .eq("id", id)
-    .single();
-
-  if (error) {
-    if (error.code === "PGRST116") return null;
-    throw error;
-  }
-
-  return {
-    ...data,
-    member_count: data.members?.length || 0,
-  };
-}
-
-/**
- * Get a calendar by invite code (for joining)
- */
-export async function getCalendarByInviteCode(
-  inviteCode: string
-): Promise<CalendarWithMembers | null> {
-  const { data, error } = await supabase
-    .from("calendars")
-    .select(
-      `
-      *,
-      members:calendar_members(
-        *,
-        user:users(*)
-      )
-    `
-    )
-    .eq("invite_code", inviteCode)
-    .single();
-
-  if (error) {
-    if (error.code === "PGRST116") return null;
-    throw error;
-  }
-
-  return {
-    ...data,
-    member_count: data.members?.length || 0,
-  };
-}
-
+// 2. --- ▼ 修正点: 削除されていた generateInviteCode 関数を再追加 ▼ ---
 /**
  * Generate a random invite code
  */
@@ -113,6 +22,106 @@ function generateInviteCode(): string {
     code += chars.charAt(Math.floor(Math.random() * chars.length));
   }
   return code;
+}
+// --- ▲ 修正点 ▲ ---
+
+/**
+ * Get all calendars for the current user
+ */
+export async function getUserCalendars(): Promise<CalendarWithMembers[]> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+
+  // RLSをバイパスするRPC(DB関数)を呼び出す
+  const { data, error } = await supabase.rpc("get_my_calendars_with_members");
+
+  if (error) {
+    console.error("Error fetching user calendars (RPC):", error);
+    throw error;
+  }
+
+  if (!data) {
+    return [];
+  }
+
+  // 3. --- ▼ 修正点: RPC (JSONB) からのデータを安全にパース ▼ ---
+  // data (JSONB) を CalendarWithMembers[] に変換
+  const calendars: CalendarWithMembers[] = (data as any[]).map((c: any) => {
+    // SupabaseのRPCがJSONBを文字列として返すか、自動でパースするかは環境によるため、両対応
+    const membersList =
+      (typeof c.members === "string" ? JSON.parse(c.members) : c.members) || [];
+
+    return {
+      ...c,
+      members: membersList as CalendarMemberWithUser[],
+      member_count: membersList.length,
+    };
+  });
+  // --- ▲ 修正点 ▲ ---
+
+  calendars.sort(
+    (a, b) =>
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  );
+
+  return calendars;
+}
+
+/**
+ * Get a single calendar by ID with members
+ */
+export async function getCalendarById(
+  id: string
+): Promise<CalendarWithMembers | null> {
+  // RLS(SELECT)を削除したため、RPC(getUserCalendars)経由で取得
+  const allCalendars = await getUserCalendars();
+  const calendar = allCalendars.find((c) => c.id === id);
+
+  if (calendar) {
+    return calendar;
+  } else {
+    // ユーザーがメンバーでないカレンダーIDが要求された
+    return null;
+  }
+}
+
+/**
+ * Get a calendar by invite code (for joining)
+ */
+export async function getCalendarByInviteCode(
+  inviteCode: string
+): Promise<CalendarWithMembers | null> {
+  // RPC は単一行を返す想定だが、.single() をチェーンできないクライアント実装があるため
+  // rpc の戻り値を直接受け取り、data を扱うようにする
+  const { data, error } = await supabase.rpc("get_calendar_by_invite", {
+    p_invite_code: inviteCode,
+  });
+
+  if (error) {
+    console.error("Error fetching calendar by invite code:", error);
+    if (error.code === "PGRST116") return null; // Not found
+    throw error;
+  }
+
+  if (!data) return null;
+
+  // 4. --- ▼ 修正点: (membersArray エラー) RPC関数の型定義に対応 ▼ ---
+  // (get_calendar_by_invite は members を JSONB オブジェクトとして返す)
+  // ここでも同様に、JSON文字列かオブジェクトかの両方に対応
+  const membersList =
+    (typeof data.members === "string"
+      ? JSON.parse(data.members)
+      : data.members) || [];
+  const membersArray = membersList as CalendarMemberWithUser[];
+  // --- ▲ 修正点 ▲ ---
+
+  return {
+    ...(data as any),
+    members: membersArray,
+    member_count: membersArray.length,
+  };
 }
 
 /**
@@ -134,16 +143,19 @@ export async function createCalendar(
       color: input.color || "#3B82F6",
       icon: input.icon || "📅",
       owner_id: user.id,
-      invite_code: generateInviteCode(),
+      invite_code: generateInviteCode(), // 5. --- ▼ 修正点: 復活させたJS関数を呼ぶ ▼ ---
+      is_default: false,
     })
     .select()
     .single();
+  // --- ▲ 修正点 ▲ ---
 
   if (error) {
-    // Handle specific constraint violations
-    if (error.message.includes("maximum of 2 calendars")) {
-      throw new Error("カレンダーは最大2つまで作成できます");
+    if (error.message.includes("maximum of 2 non-default calendars")) {
+      throw new Error("作成できるカレンダーは最大2つまでです");
     }
+    // RLS違反やその他のエラー
+    console.error("createCalendar error:", error);
     throw error;
   }
 
@@ -193,7 +205,6 @@ export async function joinCalendar(
     };
   }
 
-  // Get the calendar
   const calendar = await getCalendarByInviteCode(inviteCode);
   if (!calendar) {
     return {
@@ -202,7 +213,13 @@ export async function joinCalendar(
     };
   }
 
-  // Check if user is already a member
+  if (calendar.is_default) {
+    return {
+      success: false,
+      message: "このカレンダーには参加できません",
+    };
+  }
+
   const isAlreadyMember = calendar.members?.some((m) => m.user_id === user.id);
   if (isAlreadyMember) {
     return {
@@ -211,7 +228,6 @@ export async function joinCalendar(
     };
   }
 
-  // Add user as a member
   const { error } = await supabase.from("calendar_members").insert({
     calendar_id: calendar.id,
     user_id: user.id,
@@ -231,10 +247,11 @@ export async function joinCalendar(
         message: "参加できるカレンダーは最大3つまでです",
       };
     }
+    console.error("joinCalendar error:", error);
     throw error;
   }
 
-  // Fetch updated calendar
+  // (getCalendarByIdがRPCを使うようになったので、ここで取得してもOK)
   const updatedCalendar = await getCalendarById(calendar.id);
 
   return {
@@ -271,28 +288,18 @@ export async function getCalendarStats(): Promise<CalendarStats> {
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
 
-  // Get owned calendars count
-  const { count: ownedCount } = await supabase
-    .from("calendars")
-    .select("*", { count: "exact", head: true })
-    .eq("owner_id", user.id);
+  const { data, error } = await supabase.rpc("get_my_calendar_stats");
 
-  // Get participated calendars count (excluding owned)
-  const { data: memberships } = await supabase
-    .from("calendar_members")
-    .select("calendar_id, calendars!inner(owner_id)")
-    .eq("user_id", user.id);
+  if (error) {
+    console.error("Error fetching calendar stats (RPC):", error);
+    throw error;
+  }
 
-  const participatedCount =
-    memberships?.filter((m: any) => m.calendars.owner_id !== user.id).length ||
-    0;
+  if (!data) {
+    throw new Error("Could not retrieve stats.");
+  }
 
-  return {
-    owned_calendars: ownedCount || 0,
-    participated_calendars: participatedCount,
-    can_create_more: (ownedCount || 0) < 2,
-    can_join_more: participatedCount < 3,
-  };
+  return data as CalendarStats;
 }
 
 /**

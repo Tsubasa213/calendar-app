@@ -44,7 +44,6 @@ export default function Page() {
 
     setLoading(true);
     try {
-      // --- 修正点: `select` クエリを変更 ---
       const { data, error } = await supabase
         .from("calendars")
         .select(
@@ -164,9 +163,27 @@ export default function Page() {
         />
       )}
 
-      {/* {currentCalendarId && !loading && (
-        <div className="fixed bottom-20 right-4 z-50 flex flex-row gap-3 lg:bottom-4"></div>
-      )} */}
+      {currentCalendarId && !loading && (
+        <div className="fixed bottom-20 right-4 z-50 flex flex-row gap-3 lg:bottom-4">
+          {/* --- ▼ 修正点: currentCalendar が デフォルトでない場合のみ表示 ▼ --- */}
+          {currentCalendar && !currentCalendar.is_default && (
+            <button
+              onClick={() => {
+                if (currentCalendar) {
+                  setIsShareModalOpen(true);
+                } else {
+                  alert("カレンダー情報を読み込み中です。");
+                }
+              }}
+              className="rounded-full bg-green-600 p-4 text-white shadow-lg hover:bg-green-700"
+              title="カレンダーを共有"
+            >
+              <FontAwesomeIcon icon={faShareAlt} className="size-6" />
+            </button>
+          )}
+          {/* --- ▲ 修正点 ▲ --- */}
+        </div>
+      )}
     </>
   );
 }

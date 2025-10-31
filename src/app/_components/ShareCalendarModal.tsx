@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image"; // 1. next/image をインポート
 import { getInviteUrl } from "@/lib/queries/calendarQueries";
 import type { CalendarWithMembers } from "@/types/calendar.types";
 
@@ -118,8 +119,7 @@ export default function ShareCalendarModal({
             <div className="max-h-48 space-y-2 overflow-y-auto rounded-lg border border-gray-200 p-3">
               {calendar.members && calendar.members.length > 0 ? (
                 calendar.members.map((member) => {
-                  // --- 修正点: member.user が null の場合のフォールバック ---
-                  if (!member.user) {
+                  if (!member.user || !member.user.id) {
                     return (
                       <div
                         key={member.id}
@@ -138,26 +138,31 @@ export default function ShareCalendarModal({
                     );
                   }
 
-                  // --- 元のコード（member.user が存在する場合） ---
                   return (
                     <div
                       key={member.id}
                       className="flex items-center space-x-3"
                     >
+                      {/* --- ▼ 修正点: <img> を <Image> に変更 ▼ --- */}
                       {member.user.avatar_url ? (
-                        <img
+                        <Image
                           src={member.user.avatar_url}
-                          alt={member.user.name}
+                          alt={member.user.name || "アバター"}
+                          width={32}
+                          height={32}
                           className="size-8 rounded-full"
                         />
                       ) : (
                         <div className="flex size-8 items-center justify-center rounded-full bg-blue-500 text-sm font-medium text-white">
-                          {member.user.name.charAt(0).toUpperCase()}
+                          {member.user.name
+                            ? member.user.name.charAt(0).toUpperCase()
+                            : "?"}
                         </div>
                       )}
+                      {/* --- ▲ 修正点 ▲ --- */}
                       <div className="flex-1">
                         <p className="text-sm font-medium text-gray-900">
-                          {member.user.name}
+                          {member.user.name || "名前なし"}
                         </p>
                         <p className="text-xs text-gray-500">{member.role}</p>
                       </div>

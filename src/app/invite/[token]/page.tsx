@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image"; // 1. next/image をインポート
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/app/context/AuthContext";
 import {
@@ -217,30 +218,59 @@ export default function InvitePage() {
                   メンバー
                 </h4>
                 <div className="max-h-48 space-y-2 overflow-y-auto rounded-lg border border-gray-200 p-3">
-                  {calendar.members.map((member) => (
-                    <div
-                      key={member.id}
-                      className="flex items-center space-x-3"
-                    >
-                      {member.user.avatar_url ? (
-                        <img
-                          src={member.user.avatar_url}
-                          alt={member.user.name}
-                          className="size-8 rounded-full"
-                        />
-                      ) : (
-                        <div className="flex size-8 items-center justify-center rounded-full bg-blue-500 text-sm font-medium text-white">
-                          {member.user.name.charAt(0).toUpperCase()}
+                  {calendar.members.map((member) => {
+                    if (!member.user || !member.user.id) {
+                      return (
+                        <div
+                          key={member.id}
+                          className="flex items-center space-x-3 opacity-50"
+                        >
+                          <div className="flex size-8 items-center justify-center rounded-full bg-gray-400 text-sm font-medium text-white">
+                            ?
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-sm font-medium text-gray-900">
+                              不明なユーザー
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              {member.role}
+                            </p>
+                          </div>
                         </div>
-                      )}
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">
-                          {member.user.name}
-                        </p>
-                        <p className="text-xs text-gray-500">{member.role}</p>
+                      );
+                    }
+
+                    return (
+                      <div
+                        key={member.id}
+                        className="flex items-center space-x-3"
+                      >
+                        {/* --- ▼ 修正点: <img> を <Image> に変更 ▼ --- */}
+                        {member.user.avatar_url ? (
+                          <Image
+                            src={member.user.avatar_url}
+                            alt={member.user.name || "アバター"}
+                            width={32}
+                            height={32}
+                            className="size-8 rounded-full"
+                          />
+                        ) : (
+                          <div className="flex size-8 items-center justify-center rounded-full bg-blue-500 text-sm font-medium text-white">
+                            {member.user.name
+                              ? member.user.name.charAt(0).toUpperCase()
+                              : "?"}
+                          </div>
+                        )}
+                        {/* --- ▲ 修正点 ▲ --- */}
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">
+                            {member.user.name || "名前なし"}
+                          </p>
+                          <p className="text-xs text-gray-500">{member.role}</p>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
