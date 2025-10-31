@@ -44,7 +44,7 @@ export default function EventTypeManager({
   };
 
   return (
-    <div className="mb-4 rounded bg-gray-50 p-4">
+    <div className="rounded bg-gray-50 p-4">
       <h3 className="mb-2 text-sm font-semibold text-gray-700">
         予定ジャンル作成
       </h3>
@@ -78,24 +78,35 @@ export default function EventTypeManager({
         </button>
       </div>
       {error && <div className="mb-2 text-xs text-red-600">{error}</div>}
-      <div className="flex flex-wrap gap-2">
-        {eventTypes.map((t) => (
-          <div
-            key={t.id}
-            className="flex items-center gap-1 rounded border px-2 py-1 text-sm"
-            style={{ backgroundColor: t.color }}
-          >
-            <span className="font-medium text-white drop-shadow">{t.name}</span>
-            <button
-              type="button"
-              onClick={() => handleDelete(t.id)}
-              className="ml-1 text-xs text-white hover:text-red-200"
-              title="削除"
+
+      {/* --- ▼ 修正点: このdivに max-h と overflow-y-auto を追加 ▼ --- */}
+      <div className="flex max-h-28 flex-wrap gap-2 overflow-y-auto rounded border border-gray-200 bg-white p-2">
+        {/* --- ▲ 修正点 ▲ --- */}
+        {eventTypes.length > 0 ? (
+          eventTypes.map((t) => (
+            <div
+              key={t.id}
+              className="flex items-center gap-1 rounded border px-2 py-1 text-sm"
+              style={{ backgroundColor: t.color }}
             >
-              ×
-            </button>
-          </div>
-        ))}
+              <span className="font-medium text-white drop-shadow">
+                {t.name}
+              </span>
+              <button
+                type="button"
+                onClick={() => handleDelete(t.id)}
+                className="ml-1 text-xs text-white hover:text-red-200"
+                title="削除"
+              >
+                ×
+              </button>
+            </div>
+          ))
+        ) : (
+          <span className="w-full text-center text-xs text-gray-400">
+            ジャンルがありません
+          </span>
+        )}
       </div>
     </div>
   );

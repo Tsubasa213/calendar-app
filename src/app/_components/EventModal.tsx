@@ -10,6 +10,7 @@ interface EventModalProps {
   onClose: () => void;
   onAddEvent: () => void;
   onDeleteEvent: (eventId: string) => void;
+  onEditEvent: (event: Event) => void; // 1. 編集用プロパティを追加
 }
 
 export const EventModal: React.FC<EventModalProps> = ({
@@ -19,6 +20,7 @@ export const EventModal: React.FC<EventModalProps> = ({
   onClose,
   onAddEvent,
   onDeleteEvent,
+  onEditEvent, // 2. プロパティを受け取る
 }) => {
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
@@ -26,7 +28,8 @@ export const EventModal: React.FC<EventModalProps> = ({
 
   const eventsForDate = getEventsForDate(events, selectedDate);
 
-  const handleDeleteClick = (eventId: string) => {
+  const handleDeleteClick = (e: React.MouseEvent, eventId: string) => {
+    e.stopPropagation(); // 3. 親ボタンのクリックイベントを防ぐ
     setDeleteConfirmId(eventId);
   };
 
@@ -72,9 +75,11 @@ export const EventModal: React.FC<EventModalProps> = ({
           {eventsForDate.length > 0 ? (
             <div className="space-y-3">
               {eventsForDate.map((event) => (
-                <div
+                // 4. div を button に変更し、onClick を設定
+                <button
                   key={event.id}
-                  className="rounded-lg border-l-4 bg-gray-50 p-3"
+                  onClick={() => onEditEvent(event)}
+                  className="w-full rounded-lg border-l-4 bg-gray-50 p-3 text-left transition-colors hover:bg-gray-100"
                   style={{ borderColor: event.color || "#3B82F6" }}
                 >
                   <div className="flex items-start justify-between">
@@ -89,7 +94,8 @@ export const EventModal: React.FC<EventModalProps> = ({
                       </p>
                     </div>
                     <button
-                      onClick={() => handleDeleteClick(event.id)}
+                      // 5. 削除ボタンの onClick を修正
+                      onClick={(e) => handleDeleteClick(e, event.id)}
                       className="ml-3 rounded-md p-1 text-red-500 transition-colors hover:bg-red-50 hover:text-red-700"
                       title="削除"
                     >
@@ -108,7 +114,7 @@ export const EventModal: React.FC<EventModalProps> = ({
                       </svg>
                     </button>
                   </div>
-                </div>
+                </button>
               ))}
             </div>
           ) : (

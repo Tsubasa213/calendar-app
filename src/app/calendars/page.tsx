@@ -21,12 +21,18 @@ import ShareCalendarModal from "@/app/_components/ShareCalendarModal";
 import EventTypeManager from "@/app/_components/EventTypeManager";
 import EditCalendarModal from "@/app/_components/EditCalendarModal";
 import { EventType } from "@/types/event.types";
-("@/app/context/CalendarContext");
+import { createClient } from "@/lib/supabase/client";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faShareAlt } from "@fortawesome/free-solid-svg-icons";
 
 export default function CalendarsPage() {
   const router = useRouter();
   const { user } = useAuth();
-  const { setCurrentCalendarId } = useCalendar();
+  const {
+    setCurrentCalendarId,
+    currentCalendarId,
+    refreshEventTypes: refreshGlobalEventTypes,
+  } = useCalendar();
   const [calendars, setCalendars] = useState<CalendarWithMembers[]>([]);
   const [stats, setStats] = useState<CalendarStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -41,9 +47,8 @@ export default function CalendarsPage() {
   const [calendarEventTypes, setCalendarEventTypes] = useState<
     Record<string, EventType[]>
   >({});
-  const [editCalendarData, setEditCalendarData] = useState<
-    Record<string, { name: string; description: string; icon: string }>
-  >({});
+
+  const supabase = createClient();
 
   useEffect(() => {
     loadCalendars();
@@ -62,6 +67,83 @@ export default function CalendarsPage() {
       console.error("Failed to load calendars:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleOpenEditModal = async (calendar: CalendarWithMembers) => {
+    try {
+      const { data, error } = await supabase
+        .from("event_types")
+        .select("*")
+        .eq("calendar_id", calendar.id)
+        .order("created_at", { ascending: true });
+
+      if (error) throw error;
+
+      setCalendarEventTypes((prev) => ({
+        ...prev,
+        [calendar.id]: data || [],
+      }));
+
+      setEditCalendarId(calendar.id);
+    } catch (error) {
+      console.error("Failed to load event types:", error);
+      alert("ジャンルの読み込みに失敗しました");
+    }
+  };
+
+  const handleSaveCalendar = async (
+    calendarId: string,
+    data: {
+      name: string;
+      description: string;
+      icon: string;
+      eventTypes: EventType[];
+    }
+  ) => {
+    try {
+      const { error: calendarError } = await supabase
+        .from("calendars")
+        .update({
+          name: data.name,
+          description: data.description,
+          icon: data.icon,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", calendarId);
+      if (calendarError) throw calendarError;
+
+      const { error: deleteError } = await supabase
+        .from("event_types")
+        .delete()
+        .eq("calendar_id", calendarId);
+      if (deleteError) throw deleteError;
+
+      if (data.eventTypes.length > 0) {
+        const typesToInsert = data.eventTypes.map((type) => ({
+          // id: type.id, // IDは自動生成させる
+          calendar_id: calendarId,
+          name: type.name,
+          color: type.color,
+          created_at: new Date().toISOString(),
+        }));
+        const { error: insertError } = await supabase
+          .from("event_types")
+          .insert(typesToInsert);
+        if (insertError) throw insertError;
+      }
+
+      await loadCalendars();
+
+      if (calendarId === currentCalendarId) {
+        await refreshGlobalEventTypes();
+      }
+
+      setEditCalendarId(null);
+      alert("カレンダー設定を保存しました");
+    } catch (error: any) {
+      console.error("Save error:", error);
+      alert("保存に失敗しました: " + error.message);
     }
   };
 
@@ -223,13 +305,15 @@ export default function CalendarsPage() {
                 <p className="text-sm text-green-800">{joinSuccess}</p>
               </div>
             )}
+            {/* --- ▼ 修正点: ボタンクラスを変更 ▼ --- */}
             <button
               type="submit"
               disabled={joiningCalendar || !stats?.can_join_more}
-              className="rounded-lg bg-blue-600 px-4 py-2 font-medium text-white transition-colors hover:bg-blue-700 disabled:bg-gray-300"
+              className="rounded-lg border border-blue-500/30 bg-blue-500/10 px-4 py-2 font-medium text-blue-600 backdrop-blur-sm transition-all hover:border-blue-500/50 hover:bg-blue-500/20 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {joiningCalendar ? "参加中..." : "参加する"}
             </button>
+            {/* --- ▲ 修正点 ▲ --- */}
           </form>
         </div>
 
@@ -239,12 +323,13 @@ export default function CalendarsPage() {
             <h2 className="text-lg font-semibold text-gray-900">
               マイカレンダー
             </h2>
+            {/* --- ▼ 修正点: ボタンクラスを変更 ▼ --- */}
             <button
               onClick={() => setShowCreateModal(true)}
               disabled={!stats?.can_create_more}
               className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
                 stats?.can_create_more
-                  ? "bg-blue-600 text-white hover:bg-blue-700"
+                  ? "border border-blue-500/30 bg-blue-500/10 text-blue-600 backdrop-blur-sm hover:border-blue-500/50 hover:bg-blue-500/20"
                   : "cursor-not-allowed bg-gray-300 text-gray-500"
               }`}
               title={
@@ -255,6 +340,7 @@ export default function CalendarsPage() {
             >
               {stats?.can_create_more ? "+ 新規作成" : "作成上限に達しました"}
             </button>
+            {/* --- ▲ 修正点 ▲ --- */}
           </div>
           {calendars.length === 0 ? (
             <div className="py-8 text-center text-gray-500">
@@ -267,45 +353,56 @@ export default function CalendarsPage() {
             <div className="space-y-4">
               {calendars.map((calendar) => {
                 const owner = isOwner(calendar);
-                const eventTypes = calendarEventTypes[calendar.id] || [];
-                const editData = editCalendarData[calendar.id] || {
-                  name: calendar.name,
-                  description: calendar.description || "",
-                  icon: calendar.icon || "📅",
-                };
                 return (
                   <button
                     key={calendar.id}
                     className="mb-2 w-full rounded-lg border border-gray-200 p-4 text-left transition-shadow hover:shadow-md focus:outline-none"
                     onClick={() => {
-                      if (editCalendarId === calendar.id) {
-                        handleCalendarClick(calendar.id);
-                      } else {
-                        setEditCalendarId(calendar.id);
-                      }
+                      handleOpenEditModal(calendar);
                     }}
                   >
-                    <div className="flex items-start gap-3">
-                      <span className="text-3xl">{editData.icon}</span>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-semibold text-gray-900">
-                            {editData.name}
-                          </h3>
-                          {owner && (
-                            <span className="rounded bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800">
-                              オーナー
-                            </span>
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex flex-1 items-start gap-3">
+                        <span className="text-3xl">
+                          {calendar.icon || "📅"}
+                        </span>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-semibold text-gray-900">
+                              {calendar.name}
+                            </h3>
+                            {owner && (
+                              <span className="rounded bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800">
+                                オーナー
+                              </span>
+                            )}
+                          </div>
+                          {calendar.description && (
+                            <p className="mt-1 text-sm text-gray-600">
+                              {calendar.description}
+                            </p>
                           )}
-                        </div>
-                        {editData.description && (
-                          <p className="mt-1 text-sm text-gray-600">
-                            {editData.description}
+                          <p className="mt-2 text-sm text-gray-500">
+                            メンバー: {calendar.member_count}/8
                           </p>
-                        )}
-                        <p className="mt-2 text-sm text-gray-500">
-                          メンバー: {calendar.member_count}/8
-                        </p>
+                        </div>
+                      </div>
+
+                      <div className="shrink-0">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShareCalendar(calendar);
+                          }}
+                          className="ml-4 rounded p-2 text-gray-400 hover:bg-blue-50 hover:text-blue-600"
+                          title="招待URLを共有"
+                        >
+                          <FontAwesomeIcon
+                            icon={faShareAlt}
+                            className="size-5"
+                          />
+                        </button>
                       </div>
                     </div>
                   </button>
@@ -332,7 +429,6 @@ export default function CalendarsPage() {
         />
       )}
 
-      {/* 編集モーダル */}
       {editCalendarId && (
         <EditCalendarModal
           isOpen={!!editCalendarId}
@@ -346,15 +442,12 @@ export default function CalendarsPage() {
           }
           onClose={() => setEditCalendarId(null)}
           onSave={({ name, description, icon, eventTypes }) => {
-            setEditCalendarData({
-              ...editCalendarData,
-              [editCalendarId]: { name, description, icon },
+            handleSaveCalendar(editCalendarId, {
+              name,
+              description,
+              icon,
+              eventTypes,
             });
-            setCalendarEventTypes({
-              ...calendarEventTypes,
-              [editCalendarId]: eventTypes,
-            });
-            setEditCalendarId(null);
           }}
         />
       )}

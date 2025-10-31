@@ -4,8 +4,44 @@ import { Event, DbEvent } from "@/types/event.types";
  * データベースのイベントをFullCalendar形式に変換
  */
 export function convertDbEventToCalendarEvent(event: DbEvent): Event {
+  // --- ▼ 修正点 1/3 ▼ ---
+  // event オブジェクト自体が null や undefined でないかチェック
+  if (!event) {
+    console.error(
+      "convertDbEventToCalendarEvent に null または undefined のイベントが渡されました"
+    );
+    // エラーが起きた場合のフォールバックイベント
+    return {
+      id: `error-${Date.now()}`,
+      title: "エラー: イベント読込失敗",
+      start: new Date().toISOString().split("T")[0],
+      allDay: true,
+      color: "#EF4444", // エラーを赤色で示す
+    };
+  }
+  // --- ▲ 修正点 1/3 ▲ ---
+
   // 全日イベントの場合は日付のみを使用（タイムゾーンの影響を避ける）
   if (event.is_all_day) {
+    // --- ▼ 修正点 2/3 ▼ ---
+    // start_time や end_time が null でないかチェック
+    if (!event.start_time || !event.end_time) {
+      console.error(
+        "無効な全日イベントです。開始または終了時刻がありません:",
+        event
+      );
+      const fallbackDate = new Date().toISOString().split("T")[0];
+      return {
+        id: event.id,
+        title: event.title,
+        start: event.start_time ? event.start_time.split("T")[0] : fallbackDate,
+        end: event.end_time ? event.end_time.split("T")[0] : fallbackDate,
+        allDay: true,
+        color: event.color || "#EF4444", // この場合もエラーとして赤色
+      };
+    }
+    // --- ▲ 修正点 2/3 ▲ ---
+
     const startDate = event.start_time.split("T")[0];
     const endDate = event.end_time.split("T")[0];
 
@@ -20,7 +56,10 @@ export function convertDbEventToCalendarEvent(event: DbEvent): Event {
       start: startDate,
       end: formattedEndDate,
       allDay: true,
+      // --- ▼ 修正点 3/3 ▼ ---
+      // データベースの color カラムを優先、なければデフォルト色
       color: event.color || "#3B82F6",
+      // --- ▲ 修正点 3/3 ▲ ---
     };
   } else {
     // 時間制イベントはそのまま使用
@@ -30,7 +69,10 @@ export function convertDbEventToCalendarEvent(event: DbEvent): Event {
       start: event.start_time,
       end: event.end_time,
       allDay: false,
+      // --- ▼ 修正点 3/3 ▼ ---
+      // データベースの color カラムを優先、なければデフォルト色
       color: event.color || "#3B82F6",
+      // --- ▲ 修正点 3/3 ▲ ---
     };
   }
 }
@@ -40,6 +82,8 @@ export function convertDbEventToCalendarEvent(event: DbEvent): Event {
  */
 export function getEventsForDate(events: Event[], dateStr: string): Event[] {
   return events.filter((event) => {
+    // startがnullやundefinedでないことを確認
+    if (!event || !event.start) return false;
     const eventDate = event.start.split("T")[0];
     return eventDate === dateStr;
   });
@@ -73,7 +117,7 @@ export function calculateNewEventTimes(
     const endYear = actualEndDate.getFullYear();
     const endMonth = String(actualEndDate.getMonth() + 1).padStart(2, "0");
     const endDay = String(actualEndDate.getDate()).padStart(2, "0");
-    const newEndDateStr = `${endYear}-${endMonth}-${endDay}`;
+    const newEndDateStr = `${endYear}-${month}-${endDay}`;
 
     return {
       newStartTime: `${newStartDate}T00:00:00`,
@@ -105,7 +149,7 @@ export function calculateNewEventTimes(
       const endHours = String(newEnd.getHours()).padStart(2, "0");
       const endMinutes = String(newEnd.getMinutes()).padStart(2, "0");
       const endSeconds = String(newEnd.getSeconds()).padStart(2, "0");
-      newEndTime = `${endYear}-${endMonth}-${endDay}T${endHours}:${endMinutes}:${endSeconds}`;
+      newEndTime = `${endYear}-${endMonth}-${endDay}T${endHours}:${endMinutes}:${seconds}`;
     } else {
       // 終了時刻がない場合は開始時刻と同じにする
       newEndTime = newStartTime;

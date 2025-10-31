@@ -117,27 +117,53 @@ export default function ShareCalendarModal({
             </h4>
             <div className="max-h-48 space-y-2 overflow-y-auto rounded-lg border border-gray-200 p-3">
               {calendar.members && calendar.members.length > 0 ? (
-                calendar.members.map((member) => (
-                  <div key={member.id} className="flex items-center space-x-3">
-                    {member.user.avatar_url ? (
-                      <img
-                        src={member.user.avatar_url}
-                        alt={member.user.name}
-                        className="size-8 rounded-full"
-                      />
-                    ) : (
-                      <div className="flex size-8 items-center justify-center rounded-full bg-blue-500 text-sm font-medium text-white">
-                        {member.user.name.charAt(0).toUpperCase()}
+                calendar.members.map((member) => {
+                  // --- 修正点: member.user が null の場合のフォールバック ---
+                  if (!member.user) {
+                    return (
+                      <div
+                        key={member.id}
+                        className="flex items-center space-x-3 opacity-50"
+                      >
+                        <div className="flex size-8 items-center justify-center rounded-full bg-gray-400 text-sm font-medium text-white">
+                          ?
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-gray-900">
+                            不明なユーザー
+                          </p>
+                          <p className="text-xs text-gray-500">{member.role}</p>
+                        </div>
                       </div>
-                    )}
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-900">
-                        {member.user.name}
-                      </p>
-                      <p className="text-xs text-gray-500">{member.role}</p>
+                    );
+                  }
+
+                  // --- 元のコード（member.user が存在する場合） ---
+                  return (
+                    <div
+                      key={member.id}
+                      className="flex items-center space-x-3"
+                    >
+                      {member.user.avatar_url ? (
+                        <img
+                          src={member.user.avatar_url}
+                          alt={member.user.name}
+                          className="size-8 rounded-full"
+                        />
+                      ) : (
+                        <div className="flex size-8 items-center justify-center rounded-full bg-blue-500 text-sm font-medium text-white">
+                          {member.user.name.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-900">
+                          {member.user.name}
+                        </p>
+                        <p className="text-xs text-gray-500">{member.role}</p>
+                      </div>
                     </div>
-                  </div>
-                ))
+                  );
+                })
               ) : (
                 <p className="text-sm text-gray-500">メンバーがいません</p>
               )}

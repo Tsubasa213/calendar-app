@@ -7,13 +7,20 @@ import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import listPlugin from "@fullcalendar/list";
 import "./Calendar.css";
-import { CalendarComponentProps, EventFormData } from "@/types/event.types";
+// 1. DbEvent と Event (FullCalendar用) をインポート
+import {
+  CalendarComponentProps,
+  EventFormData,
+  Event,
+  DbEvent,
+} from "@/types/event.types";
 import { useEvents } from "./hooks/useEvents";
 import { useCalendar as useCalendarHook } from "./hooks/useCalendar";
 import { EventModal } from "./EventModal";
 import { AddEventModal } from "./AddEventModal";
 import { calculateNewEventTimes } from "@/lib/utils/eventUtils";
 import { getTodayString } from "@/lib/utils/dateUtils";
+import { createClient } from "@/lib/supabase/client"; // 2. Supabaseクライアントをインポート
 
 const CalendarComponent: React.FC<CalendarComponentProps> = ({
   onCalendarReady,
@@ -38,12 +45,19 @@ const CalendarComponent: React.FC<CalendarComponentProps> = ({
     memo: "",
   });
 
-  const { events, isLoading, addEvent, deleteEvent, updateEvent } = useEvents();
+  const {
+    events,
+    isLoading,
+    addEvent,
+    deleteEvent,
+    updateEventTime, // 3. リネームされた関数
+    updateEventDetails, // 4. 新しい関数
+  } = useEvents(eventTypes);
+
+  const supabase = createClient(); // 5. Supabaseクライアントを初期化
 
   useEffect(() => {
     setIsClient(true);
-
-    // ローカルストレージから設定を読み込み
     const savedSettings = localStorage.getItem("calendarSettings");
     if (savedSettings) {
       const settings = JSON.parse(savedSettings);
@@ -56,6 +70,8 @@ const CalendarComponent: React.FC<CalendarComponentProps> = ({
   const openAddEventModalWithDate = (dateStr: string) => {
     setSelectedDate(dateStr);
     setFormData({
+      // 6. resetFormFields を使う
+      id: undefined, // idをクリア
       title: "",
       startDate: dateStr,
       startTime: defaultStartTime,
@@ -87,6 +103,7 @@ const CalendarComponent: React.FC<CalendarComponentProps> = ({
     setSelectedDate(arg.dateStr);
     setFormData({
       ...formData,
+      id: undefined, // 7. 新規作成なのでidをクリア
       startDate: arg.dateStr,
       endDate: arg.dateStr,
       allDay: false,
@@ -97,7 +114,6 @@ const CalendarComponent: React.FC<CalendarComponentProps> = ({
 
   const handleDateSelect = (selectInfo: any) => {
     const startDate = selectInfo.startStr;
-    // FullCalendarのendは排他的（選択範囲の次の日）なので、1日引く
     const endDateObj = new Date(selectInfo.endStr || selectInfo.end);
     endDateObj.setDate(endDateObj.getDate() - 1);
     const endDateStr = endDateObj.toISOString().split("T")[0];
@@ -111,6 +127,7 @@ const CalendarComponent: React.FC<CalendarComponentProps> = ({
     setSelectedDate(startDate);
     setFormData({
       ...formData,
+      id: undefined, // 8. 新規作成なのでidをクリア
       startDate,
       endDate: endDateStr,
       allDay: true,
@@ -133,34 +150,35 @@ const CalendarComponent: React.FC<CalendarComponentProps> = ({
     const event = info.event;
     const isAllDay = event.allDay;
 
-    console.log("=== Event Drop Debug ===");
-    console.log("Event ID:", event.id);
-    console.log("Is All Day:", isAllDay);
-
     try {
       const { newStartTime, newEndTime } = calculateNewEventTimes(
         event,
         isAllDay
       );
-
-      console.log("New start time:", newStartTime);
-      console.log("New end time:", newEndTime);
-
-      await updateEvent(event.id, newStartTime, newEndTime, isAllDay);
+      // 9. リネームした `updateEventTime` を使用
+      await updateEventTime(event.id, newStartTime, newEndTime, isAllDay);
     } catch (error) {
       console.error("予期しないエラー:", error);
       info.revert();
-      alert("予定の更新に失敗しました");
+      // アラートはしない
     }
   };
 
-  const handleAddEvent = async () => {
+  // 10. `handleAddEvent` を `handleSaveEvent` に変更
+  const handleSaveEvent = async () => {
     try {
-      await addEvent(formData);
+      if (formData.id) {
+        // IDがある場合は「更新」
+        await updateEventDetails(formData);
+      } else {
+        // IDがない場合は「新規追加」
+        await addEvent(formData);
+      }
       setIsAddEventModalOpen(false);
       resetFormFields();
     } catch (error) {
-      alert("予定の追加に失敗しました");
+      console.error("保存/更新エラー:", error);
+      // アラートはしない
     }
   };
 
@@ -168,12 +186,14 @@ const CalendarComponent: React.FC<CalendarComponentProps> = ({
     try {
       await deleteEvent(eventId);
     } catch (error) {
-      alert("予定の削除に失敗しました");
+      console.error("削除エラー:", error);
+      // アラートはしない
     }
   };
 
   const resetFormFields = () => {
     setFormData({
+      id: undefined, // idもクリア
       title: "",
       startDate: "",
       startTime: "09:00",
@@ -192,13 +212,60 @@ const CalendarComponent: React.FC<CalendarComponentProps> = ({
 
   const openAddEventModalFromEventModal = () => {
     setIsModalOpen(false);
-    if (!formData.startTime) {
-      setFormData({ ...formData, startTime: "09:00" });
-    }
-    if (!formData.endTime) {
-      setFormData({ ...formData, endTime: "10:00" });
-    }
+    // フォームデータは selectedDate に基づいて設定する
+    // resetFormFieldsを呼んでから日付を設定
+    resetFormFields();
+    setFormData((prev) => ({
+      ...prev,
+      startDate: selectedDate || getTodayString(),
+      endDate: selectedDate || getTodayString(),
+      startTime: defaultStartTime,
+      endTime: defaultEndTime,
+    }));
     setIsAddEventModalOpen(true);
+  };
+
+  // 11. 編集モーダルを開くための新しい関数
+  const handleOpenEditModal = async (event: Event) => {
+    setIsModalOpen(false); // まず日付モーダルを閉じる
+
+    try {
+      // DBから完全なイベントデータを取得 (memoやgenre IDのため)
+      const { data: dbEvent, error } = await supabase
+        .from("events")
+        .select("*")
+        .eq("id", event.id)
+        .single();
+
+      if (error || !dbEvent) {
+        throw error || new Error("イベントが見つかりません");
+      }
+
+      // DBデータを EventFormData 形式に変換
+      const [startDate, startTimeFull] = dbEvent.start_time.split("T");
+      const [endDate, endTimeFull] = dbEvent.end_time.split("T");
+
+      // eventTypes から color に一致する genre (id) を見つける
+      const selectedGenre = eventTypes.find((t) => t.color === dbEvent.color);
+
+      setFormData({
+        id: dbEvent.id,
+        title: dbEvent.title,
+        allDay: dbEvent.is_all_day,
+        startDate: startDate,
+        startTime: startTimeFull ? startTimeFull.substring(0, 5) : "00:00",
+        endDate: dbEvent.is_all_day ? endDate : startDate, // 全日でない場合は開始日と同じ（複数日対応は後で）
+        endTime: endTimeFull ? endTimeFull.substring(0, 5) : "00:00",
+        genre: selectedGenre ? selectedGenre.id : "",
+        memo: dbEvent.description || "",
+      });
+
+      // 編集モーダルを開く
+      setIsAddEventModalOpen(true);
+    } catch (error) {
+      console.error("イベントの読み込みに失敗しました:", error);
+      // アラートはしない
+    }
   };
 
   const closeAddEventModal = () => {
@@ -269,7 +336,6 @@ const CalendarComponent: React.FC<CalendarComponentProps> = ({
                 const isAllDay = arg.event.allDay;
                 const eventColor = arg.event.backgroundColor || "#3B82F6";
 
-                // HEXカラーをRGBAに変換する関数
                 const hexToRgba = (hex: string, alpha: number) => {
                   const r = parseInt(hex.slice(1, 3), 16);
                   const g = parseInt(hex.slice(3, 5), 16);
@@ -283,8 +349,8 @@ const CalendarComponent: React.FC<CalendarComponentProps> = ({
                       style={{
                         display: "flex",
                         alignItems: "center",
-                        backgroundColor: hexToRgba(eventColor, 0.1), // 10% opacity
-                        border: `1px solid ${hexToRgba(eventColor, 0.3)}`, // 30% opacity
+                        backgroundColor: hexToRgba(eventColor, 0.1),
+                        border: `1px solid ${hexToRgba(eventColor, 0.3)}`,
                         color: eventColor,
                         padding: "1px 4px",
                         borderRadius: "3px",
@@ -382,6 +448,7 @@ const CalendarComponent: React.FC<CalendarComponentProps> = ({
         onClose={closeModal}
         onAddEvent={openAddEventModalFromEventModal}
         onDeleteEvent={handleDeleteEvent}
+        onEditEvent={handleOpenEditModal} // 12. 新しいpropを渡す
       />
 
       <AddEventModal
@@ -389,7 +456,7 @@ const CalendarComponent: React.FC<CalendarComponentProps> = ({
         formData={formData}
         eventTypes={eventTypes}
         onClose={closeAddEventModal}
-        onSubmit={handleAddEvent}
+        onSubmit={handleSaveEvent} // 13. `handleSaveEvent` を渡す
         onFormChange={handleFormChange}
       />
     </div>

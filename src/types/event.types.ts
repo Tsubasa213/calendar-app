@@ -18,6 +18,7 @@ export interface CalendarComponentProps {
 }
 
 export interface EventFormData {
+  id?: string; // 編集対象のID (新規作成時は undefined)
   title: string;
   startDate: string;
   startTime: string;

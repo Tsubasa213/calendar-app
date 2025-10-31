@@ -199,8 +199,6 @@ export default function CreateCalendarModal({
                 </div>
               )}
             </div>
-
-            {/* カラー選択は削除 */}
           </div>
 
           <div className="flex gap-3 border-t border-gray-200 bg-gray-50 p-4">
@@ -211,13 +209,15 @@ export default function CreateCalendarModal({
             >
               キャンセル
             </button>
+            {/* --- ▼ 修正点: ボタンクラスを変更 ▼ --- */}
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 rounded-lg bg-blue-600 px-4 py-2 font-medium text-white transition-colors hover:bg-blue-700 disabled:bg-gray-300"
+              className="flex-1 rounded-lg border border-blue-500/30 bg-blue-500/10 px-4 py-2 font-medium text-blue-600 backdrop-blur-sm transition-all hover:border-blue-500/50 hover:bg-blue-500/20 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {loading ? "作成中..." : "作成"}
             </button>
+            {/* --- ▲ 修正点 ▲ --- */}
           </div>
         </form>
       </div>
