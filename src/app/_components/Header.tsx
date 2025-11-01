@@ -134,7 +134,28 @@ const Header: React.FC = () => {
             className="flex flex-1 items-center justify-between px-2 text-lg font-bold sm:px-3 md:px-4 lg:pl-24 lg:pr-28"
             style={{ color: getTextColor(themeColor) }}
           >
-            <div className="flex items-center gap-2">
+            <button
+              className="flex items-center gap-2 rounded-lg px-2 py-1 transition-colors lg:p-0"
+              style={{
+                backgroundColor: "transparent",
+                color: getTextColor(themeColor),
+              }}
+              onMouseEnter={(e) => {
+                if (user) {
+                  e.currentTarget.style.backgroundColor =
+                    getHoverColor(themeColor);
+                }
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = "transparent";
+              }}
+              onClick={() => {
+                if (user) {
+                  setShowCalendarSelector(true);
+                }
+              }}
+              disabled={!user}
+            >
               <FontAwesomeIcon icon={faCalendar} className="mr-2" />
               <span>Calendar</span>
               {currentCalendarName && (
@@ -142,7 +163,7 @@ const Header: React.FC = () => {
                   - {currentCalendarName}
                 </span>
               )}
-            </div>
+            </button>
             {user && (
               <div className="flex items-center gap-2">
                 {/* カレンダー切り替えボタン（デスクトップのみ） */}

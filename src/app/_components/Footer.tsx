@@ -104,7 +104,10 @@ const Footer: React.FC = () => {
   ];
 
   return (
-    <footer className="lg:hidden" style={{ backgroundColor: themeColor }}>
+    <footer
+      className="fixed inset-x-0 bottom-0 z-50 pb-8 lg:hidden"
+      style={{ backgroundColor: themeColor }}
+    >
       {/* ナビゲーション */}
       <div
         className="border-b"

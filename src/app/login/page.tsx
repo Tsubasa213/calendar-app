@@ -37,18 +37,7 @@ export default function LoginPage() {
         if (error) throw error;
 
         if (data.user) {
-          // ユーザー情報をusersテーブルに追加
-          const { error: insertError } = await supabase.from("users").insert({
-            id: data.user.id,
-            email: data.user.email,
-            name: email.split("@")[0], // メールアドレスの@前を名前として使用
-          });
-
-          if (insertError) {
-            console.error("ユーザー情報の保存エラー:", insertError);
-          }
-
-          alert("アカウントを作成しました。確認メールをご確認ください。");
+          // トリガーによって自動的にusersテーブルにレコードが作成されます
           setIsSignUp(false);
         }
       } else {

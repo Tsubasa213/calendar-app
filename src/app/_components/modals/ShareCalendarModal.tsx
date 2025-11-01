@@ -24,7 +24,6 @@ export default function ShareCalendarModal({
 
   const handleCopy = async () => {
     if (!inviteUrl) {
-      alert("招待URLが生成されていません。カレンダーを再作成してください。");
       return;
     }
     try {

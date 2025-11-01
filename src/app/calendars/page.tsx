@@ -100,9 +100,6 @@ export default function CalendarsPage() {
       setEditCalendarId(calendar.id);
     } catch (error: any) {
       console.error("Failed to load event types:", error);
-      alert(
-        `エラー: ${error.message || "イベントタイプの読み込みに失敗しました"}\n\nSupabaseダッシュボードでRLSポリシーを確認してください。`
-      );
     }
   };
 

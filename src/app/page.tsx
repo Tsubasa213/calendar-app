@@ -113,10 +113,8 @@ export default function Page() {
       await refreshEventTypes();
       setIsEditModalOpen(false);
       await fetchCalendar();
-      alert("カレンダー設定を保存しました");
     } catch (error) {
       console.error("保存エラー:", error);
-      alert("保存に失敗しました");
     }
   };
 

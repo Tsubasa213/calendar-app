@@ -29,10 +29,10 @@ export const AddEventModal: React.FC<AddEventModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      {/* --- 修正点: PCでもスクロールしないよう高さを max-h-[95vh] に制限 --- */}
-      <div className="max-h-[95vh] w-full max-w-lg overflow-y-auto rounded-lg bg-white p-6 shadow-xl">
+      {/* モーダルサイズ: 横3(max-w-md = 28rem = 448px)、縦5(max-h-[70vh]) */}
+      <div className="max-h-[70vh] w-full max-w-md overflow-y-auto rounded-lg bg-white p-4 shadow-xl sm:p-6">
         <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-xl font-bold">
+          <h3 className="text-lg font-bold sm:text-xl">
             {isEditing ? "予定を編集" : "予定を追加"}
           </h3>
           <button
@@ -88,7 +88,7 @@ export const AddEventModal: React.FC<AddEventModalProps> = ({
             <label className="mb-1 block text-sm font-medium text-gray-700">
               開始日時
             </label>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               <input
                 type="date"
                 value={formData.startDate}
@@ -111,7 +111,7 @@ export const AddEventModal: React.FC<AddEventModalProps> = ({
             <label className="mb-1 block text-sm font-medium text-gray-700">
               終了日時
             </label>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               <input
                 type="date"
                 value={formData.endDate}

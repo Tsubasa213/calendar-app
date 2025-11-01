@@ -19,6 +19,7 @@ CREATE TABLE public.calendars (
   color VARCHAR(7) DEFAULT '#3B82F6',
   owner_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
   is_public BOOLEAN DEFAULT false,
+  is_default BOOLEAN DEFAULT false,
   invite_code VARCHAR(20) UNIQUE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -83,6 +84,11 @@ CREATE INDEX idx_event_reminders_schedule ON public.event_reminders(remind_befor
 CREATE INDEX idx_calendars_owner ON public.calendars(owner_id);
 CREATE INDEX idx_events_created_by ON public.events(created_by);
 
+-- Ensure only one default calendar per user
+CREATE UNIQUE INDEX unique_default_calendar_per_user 
+ON public.calendars (owner_id) 
+WHERE is_default = true;
+
 -- Enable RLS (Row Level Security)
 ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.calendars ENABLE ROW LEVEL SECURITY;
@@ -96,6 +102,9 @@ ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 -- Users policies
 CREATE POLICY "Users can view own profile" ON public.users
   FOR SELECT USING (auth.uid() = id);
+
+CREATE POLICY "Users can insert own profile" ON public.users
+  FOR INSERT WITH CHECK (auth.uid() = id);
 
 CREATE POLICY "Users can update own profile" ON public.users
   FOR UPDATE USING (auth.uid() = id);
