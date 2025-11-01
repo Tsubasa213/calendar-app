@@ -1,109 +1,172 @@
-# Time Tree Calendar App
+# 📅 カレンダー共有アプリ
 
-Time Treeライクなカレンダー共有アプリです。Next.js + Supabaseで構築されています。
+複数のカレンダーを作成・共有できるWebアプリケーションです。Next.js + Supabaseで構築されています。
 
-## 🚀 セットアップ
+## ✨ 主な機能
 
-### 1. プロジェクトのクローン
+- 📅 **カレンダー表示** - 月/週/日/リスト表示切り替え
+- ✏️ **イベント管理** - イベントの作成・編集・削除
+- 🎨 **イベントタイプ** - カスタマイズ可能なイベント分類
+- � **カレンダー共有** - 招待コードでメンバーを追加
+- 🔐 **権限管理** - オーナー/編集者/閲覧者の役割設定
+- 📱 **レスポンシブ対応** - スマートフォンでも快適に利用可能
+- 🎯 **デフォルトカレンダー** - 個人用カレンダーを自動作成
+
+## �🚀 クイックスタート
+
+### 必要要件
+
+- Node.js 18以上
+- npm または yarn
+- Supabaseアカウント
+
+### インストール
 
 ```bash
-git clone [repository-url]
-cd next-calender-app
-```
+# リポジトリのクローン
+git clone https://github.com/Tsubasa213/calendar-app.git
+cd calendar-app
 
-### 2. 依存関係のインストール
-
-```bash
+# 依存関係のインストール
 npm install
-```
 
-### 3. 環境変数の設定
-
-```bash
-# .env.exampleを.envにコピー
+# 環境変数の設定
 cp .env.example .env
 ```
 
-`.env`ファイルを編集して、Supabaseプロジェクトの情報を設定してください：
+### 環境変数の設定
 
-- `NEXT_PUBLIC_SUPABASE_URL`: SupabaseプロジェクトURL
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Supabase anon key
-- `SUPABASE_SERVICE_ROLE_KEY`: Supabase service role key
+`.env`ファイルに以下を設定：
 
-### 4. Supabaseデータベースの設定
+```env
+NEXT_PUBLIC_SUPABASE_URL=your-project-url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+```
+
+### データベースのセットアップ
 
 1. [Supabase](https://supabase.com)でプロジェクトを作成
-2. SQL Editorで`supabase/schema.sql`を実行
-3. リアルタイム機能を有効化（events, calendars, notifications, calendar_membersテーブル）
+2. SQL Editorで以下のファイルを順番に実行：
+   ```
+   supabase/migrations/schema.sql
+   supabase/migrations/create-user-trigger.sql
+   supabase/migrations/create-event-types-table.sql
+   supabase/migrations/add-event-types-rls.sql
+   ```
+3. RLSポリシーが正しく設定されていることを確認
 
-### 5. 開発サーバーの起動
+### 開発サーバーの起動
 
 ```bash
 npm run dev
 ```
 
-## 📋 機能
+ブラウザで [http://localhost:3000](http://localhost:3000) を開く
 
-- 👤 ユーザー認証（Supabase Auth）
-- 📅 カレンダー表示（月/週/日表示）
-- 🎯 イベント作成・編集・削除
-- 👥 カレンダー共有
-- 🔔 通知機能
-- 📱 レスポンシブデザイン
+## ️ 技術スタック
 
-## 🛠️ 技術スタック
+### Frontend
 
-- **Frontend**: Next.js 14, React, TypeScript
+- **Framework**: Next.js 14 (App Router)
+- **Language**: TypeScript
 - **Styling**: Tailwind CSS
-- **Backend**: Supabase (PostgreSQL + Auth + Realtime)
+- **UI Components**: React + FontAwesome
 - **Calendar**: FullCalendar
-- **State Management**: Zustand
-- **Form Handling**: React Hook Form + Zod
+
+### Backend
+
+- **Database**: Supabase (PostgreSQL)
+- **Authentication**: Supabase Auth
+- **Storage**: Supabase Storage (アバター画像)
+- **RLS**: Row Level Security for data protection
+
+### State Management
+
+- React Context API (Calendar & Auth)
 
 ## 📁 プロジェクト構造
 
 ```
-src/
-├── app/              # Next.js App Router
-├── components/       # 再利用可能コンポーネント
-├── lib/             # ライブラリ設定（Supabase等）
-├── types/           # TypeScript型定義
-└── hooks/           # カスタムフック
+calendar-app/
+├── src/
+│   ├── app/                      # Next.js App Router
+│   │   ├── _components/          # UI Components
+│   │   │   ├── modals/          # モーダルコンポーネント
+│   │   │   └── hooks/           # カスタムフック
+│   │   ├── calendars/           # カレンダー管理ページ
+│   │   ├── context/             # Context API (Auth, Calendar)
+│   │   ├── login/               # ログインページ
+│   │   └── settings/            # 設定ページ
+│   ├── lib/                      # ライブラリ・ユーティリティ
+│   │   ├── queries/             # データベースクエリ
+│   │   ├── supabase/            # Supabase設定
+│   │   └── utils/               # ヘルパー関数
+│   └── types/                    # TypeScript型定義
+├── supabase/
+│   ├── migrations/              # データベースマイグレーション
+│   └── utilities/               # デバッグ用スクリプト
+├── public/                       # 静的ファイル
+└── docs/                         # ドキュメント
 ```
 
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+## 📚 ドキュメント
 
-## Getting Started
+詳細なドキュメントは `docs/` フォルダを参照してください：
 
-First, run the development server:
+- [アーキテクチャ設計](docs/architecture.md)
+- [データベース設計](docs/database-schema.md)
+- [Supabaseセットアップ](docs/supabase-setup.md)
+- [カレンダー共有機能](docs/shared-calendar-implementation.md)
+- [API設計](docs/api-design.md)
+- [UI/UX設計](docs/ui-ux-design.md)
+
+## 🔧 開発
+
+### ビルド
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm run build
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 本番環境での実行
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm start
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### コードフォーマット
 
-## Learn More
+```bash
+npm run lint
+```
 
-To learn more about Next.js, take a look at the following resources:
+## 🚢 デプロイ
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Vercel（推奨）
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/Tsubasa213/calendar-app)
 
-## Deploy on Vercel
+1. Vercelアカウントでリポジトリをインポート
+2. 環境変数を設定
+3. デプロイ
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### その他のプラットフォーム
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Netlify
+- AWS Amplify
+- Docker
+
+## 🤝 コントリビューション
+
+プルリクエストを歓迎します！大きな変更の場合は、まずissueを開いて変更内容を議論してください。
+
+## 📝 ライセンス
+
+MIT
+
+## 🙏 謝辞
+
+- [Next.js](https://nextjs.org/)
+- [Supabase](https://supabase.com/)
+- [FullCalendar](https://fullcalendar.io/)
+- [Tailwind CSS](https://tailwindcss.com/)
