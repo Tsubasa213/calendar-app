@@ -16,8 +16,8 @@ import {
 } from "@/types/event.types";
 import { useEvents } from "./hooks/useEvents";
 import { useCalendar as useCalendarHook } from "./hooks/useCalendar";
-import { EventModal } from "./EventModal";
-import { AddEventModal } from "./AddEventModal";
+import { EventModal } from "./modals/EventModal";
+import { AddEventModal } from "./modals/AddEventModal";
 import { calculateNewEventTimes } from "@/lib/utils/eventUtils";
 import { getTodayString } from "@/lib/utils/dateUtils";
 import { createClient } from "@/lib/supabase/client"; // 2. Supabaseクライアントをインポート

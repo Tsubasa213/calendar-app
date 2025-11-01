@@ -16,10 +16,10 @@ import type {
   CalendarWithMembers,
   CalendarStats,
 } from "@/types/calendar.types";
-import CreateCalendarModal from "@/app/_components/CreateCalendarModal";
-import ShareCalendarModal from "@/app/_components/ShareCalendarModal";
+import CreateCalendarModal from "@/app/_components/modals/CreateCalendarModal";
+import ShareCalendarModal from "@/app/_components/modals/ShareCalendarModal";
 import EventTypeManager from "@/app/_components/EventTypeManager";
-import EditCalendarModal from "@/app/_components/EditCalendarModal";
+import EditCalendarModal from "@/app/_components/modals/EditCalendarModal";
 import { EventType } from "@/types/event.types";
 import { createClient } from "@/lib/supabase/client";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -74,23 +74,35 @@ export default function CalendarsPage() {
 
   const handleOpenEditModal = async (calendar: CalendarWithMembers) => {
     try {
+      console.log("イベントタイプを読み込み中...", calendar.id);
       const { data, error } = await supabase
         .from("event_types")
         .select("*")
         .eq("calendar_id", calendar.id)
         .order("created_at", { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Supabaseエラー詳細:", {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+        });
+        throw error;
+      }
 
+      console.log("イベントタイプ読み込み成功:", data);
       setCalendarEventTypes((prev) => ({
         ...prev,
         [calendar.id]: data || [],
       }));
 
       setEditCalendarId(calendar.id);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to load event types:", error);
-      // alert("ジャンルの読み込みに失敗しました"); // アラートなし
+      alert(
+        `エラー: ${error.message || "イベントタイプの読み込みに失敗しました"}\n\nSupabaseダッシュボードでRLSポリシーを確認してください。`
+      );
     }
   };
 
@@ -395,10 +407,11 @@ export default function CalendarsPage() {
               {calendars.map((calendar) => {
                 const owner = isOwner(calendar);
                 return (
-                  <button
+                  <div
                     key={calendar.id}
-                    className="mb-2 w-full rounded-lg border border-gray-200 p-4 text-left transition-shadow hover:shadow-md focus:outline-none"
+                    className="mb-2 w-full cursor-pointer rounded-lg border border-gray-200 p-4 transition-shadow hover:shadow-md"
                     onClick={() => {
+                      console.log("カードクリック:", calendar.name);
                       handleOpenEditModal(calendar);
                     }}
                   >
@@ -434,17 +447,17 @@ export default function CalendarsPage() {
                         </div>
                       </div>
 
-                      {/* --- ▼ 修正点 6/6: 右側のボタンコンテナ ▼ --- */}
-                      <div className="flex shrink-0 items-center gap-1">
-                        {/* 共有ボタン (デフォルトカレンダー以外) */}
-                        {!calendar.is_default && (
+                      {/* --- ▼ 修正点 6/6: 右側のボタンコンテナ（デフォルトカレンダー以外のみ表示） ▼ --- */}
+                      {!calendar.is_default && (
+                        <div className="flex shrink-0 items-center gap-1">
+                          {/* 共有ボタン */}
                           <button
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
                               setShareCalendar(calendar);
                             }}
-                            className="ml-4 rounded p-2 text-gray-400 hover:bg-blue-50 hover:text-blue-600"
+                            className="rounded p-2 text-gray-400 hover:bg-blue-50 hover:text-blue-600"
                             title="招待URLを共有"
                           >
                             <FontAwesomeIcon
@@ -452,10 +465,8 @@ export default function CalendarsPage() {
                               className="size-5"
                             />
                           </button>
-                        )}
 
-                        {/* 削除/退出ボタン (デフォルトカレンダー以外) */}
-                        {!calendar.is_default && (
+                          {/* 削除/退出ボタン */}
                           <button
                             type="button"
                             onClick={(e) => {
@@ -479,11 +490,11 @@ export default function CalendarsPage() {
                               className="size-5"
                             />
                           </button>
-                        )}
-                      </div>
+                        </div>
+                      )}
                       {/* --- ▲ 修正点 6/6 ▲ --- */}
                     </div>
-                  </button>
+                  </div>
                 );
               })}
             </div>

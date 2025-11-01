@@ -13,7 +13,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Image from "next/image";
-import CalendarSelectorModal from "./CalendarSelectorModal";
+import CalendarSelectorModal from "./modals/CalendarSelectorModal";
 import { useCalendar } from "@/app/context/CalendarContext";
 
 const Header: React.FC = () => {

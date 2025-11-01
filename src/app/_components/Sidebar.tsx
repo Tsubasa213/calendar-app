@@ -54,7 +54,7 @@ const Sidebar: React.FC = () => {
     {
       id: "manage",
       icon: faCalendarPlus,
-      label: "カレンダー追加",
+      label: "カレンダー設定",
       onClick: handleCalendarManageClick,
     },
   ];

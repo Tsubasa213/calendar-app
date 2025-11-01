@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { CalendarWithMembers } from "@/types/calendar.types";
 import { EventType, EVENT_TYPE_COLORS } from "@/types/event.types";
-import EventTypeManager from "./EventTypeManager";
+import EventTypeManager from "../EventTypeManager";
 
 interface EditCalendarModalProps {
   isOpen: boolean;
