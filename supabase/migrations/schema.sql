@@ -134,6 +134,12 @@ CREATE POLICY "Users can view calendar members for their calendars" ON public.ca
     )
   );
 
+CREATE POLICY "Users can join calendars" ON public.calendar_members
+  FOR INSERT WITH CHECK (
+    -- ユーザーは自分自身をメンバーとして追加できる
+    auth.uid() = user_id
+  );
+
 CREATE POLICY "Calendar owners can manage members" ON public.calendar_members
   FOR ALL USING (
     calendar_id IN (
