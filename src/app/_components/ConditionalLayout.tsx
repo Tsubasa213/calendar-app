@@ -25,7 +25,7 @@ export default function ConditionalLayout({
       <div className="flex flex-1 overflow-hidden">
         <Sidebar />
         <main
-          className={`flex-1 ${isSettingsPage || isCalendarsPage ? "overflow-auto" : "overflow-hidden"}`}
+          className={`flex-1 ${isSettingsPage || isCalendarsPage ? "overflow-auto pb-32 lg:pb-0" : "overflow-hidden pb-24 lg:pb-0"}`}
         >
           {children}
         </main>

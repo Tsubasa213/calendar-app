@@ -68,7 +68,7 @@ export default function EditCalendarModal({
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 p-4">
       {/* --- ▼ 修正点 1/4: モーダル本体に flex と max-h を設定 ▼ --- */}
-      <div className="flex max-h-[90vh] w-full max-w-md flex-col rounded-lg bg-white shadow-xl">
+      <div className="flex max-h-[85vh] w-full max-w-md flex-col rounded-lg bg-white shadow-xl">
         {/* --- ▼ 修正点 2/4: ヘッダーを縮ませない ▼ --- */}
         <div className="flex shrink-0 items-center justify-between border-b border-gray-200 p-6">
           <h2 className="text-xl font-semibold text-gray-900">
@@ -103,7 +103,7 @@ export default function EditCalendarModal({
           className="flex flex-1 flex-col overflow-hidden" // formが残りの高さをすべて使う
         >
           {/* --- ▼ 修正点 4/4: コンテンツエリアをスクロール可能にする ▼ --- */}
-          <div className="flex-1 space-y-4 overflow-y-auto p-6">
+          <div className="flex-1 space-y-3 overflow-y-auto p-4">
             <div>
               <label className="block text-sm font-medium text-gray-700">
                 カレンダー名
@@ -124,7 +124,7 @@ export default function EditCalendarModal({
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
-                rows={2}
+                rows={1}
               />
             </div>
             <div>
@@ -132,13 +132,13 @@ export default function EditCalendarModal({
                 アイコン
               </label>
               {/* アイコンリストはPCでもスクロールする */}
-              <div className="grid max-h-32 grid-cols-5 gap-2 overflow-y-auto rounded border bg-white p-2 shadow">
+              <div className="grid max-h-24 grid-cols-5 gap-2 overflow-y-auto rounded border bg-white p-2 shadow">
                 {CALENDAR_ICONS.map((ic) => (
                   <button
                     key={ic}
                     type="button"
                     onClick={() => setIcon(ic)}
-                    className={`rounded-lg border-2 p-3 text-2xl transition-colors ${icon === ic ? "border-blue-500 bg-blue-50" : "border-gray-200 hover:border-gray-300"}`}
+                    className={`rounded-lg border-2 p-2 text-xl transition-colors ${icon === ic ? "border-blue-500 bg-blue-50" : "border-gray-200 hover:border-gray-300"}`}
                   >
                     {ic}
                   </button>

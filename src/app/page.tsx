@@ -33,30 +33,23 @@ export default function Page() {
   }, [currentCalendarId]);
 
   const fetchCalendar = async () => {
-    if (!currentCalendarId) {
-      setLoading(false);
-      return;
-    }
+    if (!currentCalendarId) return;
 
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from("calendars")
-        .select(
-          `
-          *,
-          members:calendar_members(
-            *,
-            user:users(id, name, avatar_url)
-          )
-        `
-        )
-        .eq("id", currentCalendarId)
-        .single();
+      // RPCで全カレンダーを取得して、必要なものをフィルター
+      const { data, error } = await supabase.rpc(
+        "get_my_calendars_with_members"
+      );
 
       if (error) throw error;
 
-      setCurrentCalendar(data as CalendarWithMembers);
+      const calendars = Array.isArray(data) ? data : [];
+      const calendar = calendars.find((c: any) => c.id === currentCalendarId);
+
+      if (calendar) {
+        setCurrentCalendar(calendar as CalendarWithMembers);
+      }
     } catch (error) {
       console.error("カレンダー取得エラー:", error);
     } finally {
@@ -113,10 +106,8 @@ export default function Page() {
       await refreshEventTypes();
       setIsEditModalOpen(false);
       await fetchCalendar();
-      alert("カレンダー設定を保存しました");
     } catch (error) {
       console.error("保存エラー:", error);
-      alert("保存に失敗しました");
     }
   };
 
