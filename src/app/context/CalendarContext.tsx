@@ -60,16 +60,19 @@ export function CalendarProvider({ children }: { children: React.ReactNode }) {
       }
 
       // なければRPCでユーザーのカレンダーを取得
-      const { data, error } = await supabase.rpc("get_my_calendars_with_members");
+      const { data, error } = await supabase.rpc(
+        "get_my_calendars_with_members"
+      );
 
       if (error) throw error;
-      
+
       // JSONBデータをパース
       const calendars = Array.isArray(data) ? data : [];
-      
+
       // デフォルトカレンダーを優先、なければ最初のカレンダー
-      const defaultCalendar = calendars.find((c: any) => c.is_default) || calendars[0];
-      
+      const defaultCalendar =
+        calendars.find((c: any) => c.is_default) || calendars[0];
+
       if (defaultCalendar?.id) {
         setCurrentCalendarId(defaultCalendar.id);
         localStorage.setItem("currentCalendarId", defaultCalendar.id);
