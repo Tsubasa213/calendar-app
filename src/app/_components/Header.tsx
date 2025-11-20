@@ -86,7 +86,9 @@ const Header: React.FC = () => {
 
         if (data && !error) {
           const calendars = Array.isArray(data) ? data : [];
-          const calendar = calendars.find((c: any) => c.id === currentCalendarId);
+          const calendar = calendars.find(
+            (c: any) => c.id === currentCalendarId
+          );
           if (calendar) {
             setCurrentCalendarName(calendar.name);
           }
