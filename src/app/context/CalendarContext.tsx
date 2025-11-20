@@ -84,18 +84,14 @@ export function CalendarProvider({ children }: { children: React.ReactNode }) {
 
   const refreshEventTypes = async () => {
     if (!currentCalendarId) {
-      console.log("refreshEventTypes: カレンダーIDがありません");
       return;
     }
-    console.log("refreshEventTypes: カレンダーID =", currentCalendarId);
     try {
       const { data, error } = await supabase
         .from("event_types")
         .select("*")
         .eq("calendar_id", currentCalendarId)
         .order("created_at", { ascending: true });
-      console.log("Supabaseから取得したデータ:", data);
-      console.log("エラー:", error);
       if (error) throw error;
       setEventTypes(data || []);
     } catch (error) {

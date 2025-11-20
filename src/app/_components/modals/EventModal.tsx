@@ -75,11 +75,10 @@ export const EventModal: React.FC<EventModalProps> = ({
           {eventsForDate.length > 0 ? (
             <div className="space-y-3">
               {eventsForDate.map((event) => (
-                // 4. div を button に変更し、onClick を設定
-                <button
+                <div
                   key={event.id}
                   onClick={() => onEditEvent(event)}
-                  className="w-full rounded-lg border-l-4 bg-gray-50 p-3 text-left transition-colors hover:bg-gray-100"
+                  className="w-full cursor-pointer rounded-lg border-l-4 bg-gray-50 p-3 text-left transition-colors hover:bg-gray-100"
                   style={{ borderColor: event.color || "#3B82F6" }}
                 >
                   <div className="flex items-start justify-between">
@@ -94,7 +93,6 @@ export const EventModal: React.FC<EventModalProps> = ({
                       </p>
                     </div>
                     <button
-                      // 5. 削除ボタンの onClick を修正
                       onClick={(e) => handleDeleteClick(e, event.id)}
                       className="ml-3 rounded-md p-1 text-red-500 transition-colors hover:bg-red-50 hover:text-red-700"
                       title="削除"
@@ -114,7 +112,7 @@ export const EventModal: React.FC<EventModalProps> = ({
                       </svg>
                     </button>
                   </div>
-                </button>
+                </div>
               ))}
             </div>
           ) : (
