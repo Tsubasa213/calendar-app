@@ -15,7 +15,7 @@ const generateTimeOptions = () => {
   const options: string[] = [];
   for (let hour = 0; hour < 24; hour++) {
     for (let minute = 0; minute < 60; minute += 30) {
-      const timeStr = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+      const timeStr = `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
       options.push(timeStr);
     }
   }
@@ -91,7 +91,10 @@ export const AddEventModal: React.FC<AddEventModalProps> = ({
               onChange={(e) => onFormChange({ allDay: e.target.checked })}
               className="size-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
             />
-            <label htmlFor="allDay" className="text-sm font-medium text-gray-700">
+            <label
+              htmlFor="allDay"
+              className="text-sm font-medium text-gray-700"
+            >
               終日
             </label>
           </div>
