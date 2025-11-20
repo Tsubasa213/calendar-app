@@ -34,6 +34,8 @@ const CalendarComponent: React.FC<CalendarComponentProps> = ({
   const [defaultStartTime, setDefaultStartTime] = useState("09:00");
   const [defaultEndTime, setDefaultEndTime] = useState("10:00");
   const [weekStartsOn, setWeekStartsOn] = useState(0);
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
   const [formData, setFormData] = useState<EventFormData>({
     title: "",
     startDate: "",
@@ -277,9 +279,46 @@ const CalendarComponent: React.FC<CalendarComponentProps> = ({
     setFormData({ ...formData, ...updates });
   };
 
+  // スワイプ検知用の関数
+  const minSwipeDistance = 50;
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+
+    if (calendarRef.current) {
+      const calendarApi = calendarRef.current.getApi();
+
+      if (isLeftSwipe) {
+        // 左にスワイプ = 次の月
+        calendarApi.next();
+      } else if (isRightSwipe) {
+        // 右にスワイプ = 前の月
+        calendarApi.prev();
+      }
+    }
+  };
+
   return (
     <div className="flex size-full items-center justify-center bg-gray-100 p-2 sm:p-3 md:p-4 lg:pl-3">
-      <div className="flex size-full max-w-5xl flex-col rounded-lg bg-white p-2 shadow-md sm:p-3 md:p-4">
+      <div
+        className="flex size-full max-w-5xl flex-col rounded-lg bg-white p-2 shadow-md sm:p-3 md:p-4"
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+      >
         {isLoading ? (
           <div className="flex flex-1 items-center justify-center">
             <div className="text-center">
