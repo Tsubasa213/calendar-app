@@ -78,16 +78,18 @@ const Header: React.FC = () => {
 
   useEffect(() => {
     if (currentCalendarId) {
-      // 現在のカレンダー名を取得
+      // 現在のカレンダー名を取得（RPC経由でRLSをバイパス）
       const fetchCalendarName = async () => {
-        const { data } = await supabase
-          .from("calendars")
-          .select("name")
-          .eq("id", currentCalendarId)
-          .single();
+        const { data, error } = await supabase.rpc(
+          "get_my_calendars_with_members"
+        );
 
-        if (data) {
-          setCurrentCalendarName(data.name);
+        if (data && !error) {
+          const calendars = Array.isArray(data) ? data : [];
+          const calendar = calendars.find((c: any) => c.id === currentCalendarId);
+          if (calendar) {
+            setCurrentCalendarName(calendar.name);
+          }
         }
       };
 
