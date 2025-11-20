@@ -45,10 +45,10 @@ export const EventModal: React.FC<EventModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="w-full max-w-lg rounded-lg bg-white p-6 shadow-xl">
-        <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-xl font-bold">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-6 sm:p-8">
+      <div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-xl sm:p-8">
+        <div className="mb-6 flex items-center justify-between">
+          <h3 className="text-xl font-bold sm:text-2xl">
             {formatDateForDisplay(selectedDate)}
           </h3>
           <button
@@ -71,20 +71,20 @@ export const EventModal: React.FC<EventModalProps> = ({
           </button>
         </div>
 
-        <div className="mb-4 max-h-96 overflow-y-auto">
+        <div className="mb-6 max-h-96 overflow-y-auto">
           {eventsForDate.length > 0 ? (
             <div className="space-y-3">
               {eventsForDate.map((event) => (
                 <div
                   key={event.id}
                   onClick={() => onEditEvent(event)}
-                  className="w-full cursor-pointer rounded-lg border-l-4 bg-gray-50 p-3 text-left transition-colors hover:bg-gray-100"
+                  className="w-full cursor-pointer rounded-lg border-l-4 bg-gray-50 p-4 text-left transition-colors hover:bg-gray-100"
                   style={{ borderColor: event.color || "#3B82F6" }}
                 >
-                  <div className="flex items-start justify-between">
+                  <div className="flex items-start justify-between gap-3">
                     <div className="flex-1">
-                      <h4 className="font-semibold">{event.title}</h4>
-                      <p className="text-sm text-gray-600">
+                      <h4 className="font-semibold text-base">{event.title}</h4>
+                      <p className="text-sm text-gray-600 mt-1">
                         {event.allDay
                           ? "終日"
                           : `${formatTime(event.start)} - ${
@@ -94,7 +94,7 @@ export const EventModal: React.FC<EventModalProps> = ({
                     </div>
                     <button
                       onClick={(e) => handleDeleteClick(e, event.id)}
-                      className="ml-3 rounded-md p-1 text-red-500 transition-colors hover:bg-red-50 hover:text-red-700"
+                      className="ml-2 rounded-md p-2 text-red-500 transition-colors hover:bg-red-50 hover:text-red-700"
                       title="削除"
                     >
                       <svg
@@ -145,22 +145,22 @@ export const EventModal: React.FC<EventModalProps> = ({
 
       {/* 削除確認モーダル */}
       {deleteConfirmId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
-            <h3 className="mb-4 text-lg font-bold">予定を削除</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-6 sm:p-8">
+          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl sm:p-8">
+            <h3 className="mb-4 text-lg font-bold sm:text-xl">予定を削除</h3>
             <p className="mb-6 text-gray-600">
               本当にこの予定を削除しますか？この操作は取り消せません。
             </p>
             <div className="flex gap-3">
               <button
                 onClick={handleCancelDelete}
-                className="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-700 transition-colors hover:bg-gray-50"
+                className="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-700 transition-colors hover:bg-gray-50"
               >
                 キャンセル
               </button>
               <button
                 onClick={handleConfirmDelete}
-                className="flex-1 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2 text-red-600 backdrop-blur-sm transition-all hover:border-red-500/50 hover:bg-red-500/20"
+                className="flex-1 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-red-600 backdrop-blur-sm transition-all hover:border-red-500/50 hover:bg-red-500/20"
               >
                 削除
               </button>

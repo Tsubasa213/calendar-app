@@ -313,8 +313,8 @@ const CalendarComponent: React.FC<CalendarComponentProps> = ({
               eventStartEditable={true}
               eventDurationEditable={false}
               eventResizableFromStart={false}
-              selectable={true}
-              selectMirror={true}
+              selectable={false}
+              selectMirror={false}
               dayMaxEvents={false}
               dayMaxEventRows={4}
               weekends={true}
@@ -399,16 +399,6 @@ const CalendarComponent: React.FC<CalendarComponentProps> = ({
                         width: "100%",
                       }}
                     >
-                      <span
-                        style={{
-                          fontWeight: "700",
-                          color: eventColor,
-                          marginRight: "4px",
-                          pointerEvents: "none",
-                        }}
-                      >
-                        {arg.timeText}
-                      </span>
                       <span
                         style={{ fontWeight: "500", pointerEvents: "none" }}
                       >
