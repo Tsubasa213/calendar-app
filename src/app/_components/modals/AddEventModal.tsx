@@ -22,6 +22,25 @@ const generateTimeOptions = () => {
   return options;
 };
 
+// 年のオプションを生成
+const generateYearOptions = () => {
+  const currentYear = new Date().getFullYear();
+  const years: number[] = [];
+  for (let i = currentYear - 5; i <= currentYear + 10; i++) {
+    years.push(i);
+  }
+  return years;
+};
+
+// 月のオプション
+const monthOptions = Array.from({ length: 12 }, (_, i) => i + 1);
+
+// 日のオプションを生成
+const generateDayOptions = (year: number, month: number) => {
+  const daysInMonth = new Date(year, month, 0).getDate();
+  return Array.from({ length: daysInMonth }, (_, i) => i + 1);
+};
+
 export const AddEventModal: React.FC<AddEventModalProps> = ({
   isOpen,
   formData,
@@ -33,6 +52,45 @@ export const AddEventModal: React.FC<AddEventModalProps> = ({
   if (!isOpen) return null;
 
   const timeOptions = generateTimeOptions();
+  const yearOptions = generateYearOptions();
+
+  // 開始日を年月日に分解
+  const startDateParts = formData.startDate.split("-");
+  const startYear = startDateParts[0]
+    ? parseInt(startDateParts[0])
+    : new Date().getFullYear();
+  const startMonth = startDateParts[1]
+    ? parseInt(startDateParts[1])
+    : new Date().getMonth() + 1;
+  const startDay = startDateParts[2]
+    ? parseInt(startDateParts[2])
+    : new Date().getDate();
+
+  // 終了日を年月日に分解
+  const endDateParts = formData.endDate.split("-");
+  const endYear = endDateParts[0]
+    ? parseInt(endDateParts[0])
+    : new Date().getFullYear();
+  const endMonth = endDateParts[1]
+    ? parseInt(endDateParts[1])
+    : new Date().getMonth() + 1;
+  const endDay = endDateParts[2]
+    ? parseInt(endDateParts[2])
+    : new Date().getDate();
+
+  const startDayOptions = generateDayOptions(startYear, startMonth);
+  const endDayOptions = generateDayOptions(endYear, endMonth);
+
+  // 日付変更ハンドラー
+  const handleStartDateChange = (year: number, month: number, day: number) => {
+    const dateStr = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    onFormChange({ startDate: dateStr });
+  };
+
+  const handleEndDateChange = (year: number, month: number, day: number) => {
+    const dateStr = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    onFormChange({ endDate: dateStr });
+  };
 
   const handleSubmit = () => {
     if (!formData.title || !formData.startDate) return;
@@ -105,12 +163,60 @@ export const AddEventModal: React.FC<AddEventModalProps> = ({
               開始日時
             </label>
             <div className="flex flex-col gap-3">
-              <input
-                type="date"
-                value={formData.startDate}
-                onChange={(e) => onFormChange({ startDate: e.target.value })}
-                className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+              {/* 年月日選択 */}
+              <div className="grid grid-cols-3 gap-2">
+                <select
+                  value={startYear}
+                  onChange={(e) =>
+                    handleStartDateChange(
+                      parseInt(e.target.value),
+                      startMonth,
+                      startDay
+                    )
+                  }
+                  className="w-full rounded-lg border border-gray-300 px-2 py-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  {yearOptions.map((year) => (
+                    <option key={year} value={year}>
+                      {year}年
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={startMonth}
+                  onChange={(e) =>
+                    handleStartDateChange(
+                      startYear,
+                      parseInt(e.target.value),
+                      startDay
+                    )
+                  }
+                  className="w-full rounded-lg border border-gray-300 px-2 py-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  {monthOptions.map((month) => (
+                    <option key={month} value={month}>
+                      {month}月
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={startDay}
+                  onChange={(e) =>
+                    handleStartDateChange(
+                      startYear,
+                      startMonth,
+                      parseInt(e.target.value)
+                    )
+                  }
+                  className="w-full rounded-lg border border-gray-300 px-2 py-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  {startDayOptions.map((day) => (
+                    <option key={day} value={day}>
+                      {day}日
+                    </option>
+                  ))}
+                </select>
+              </div>
               {!formData.allDay && (
                 <select
                   value={formData.startTime}
@@ -133,12 +239,60 @@ export const AddEventModal: React.FC<AddEventModalProps> = ({
               終了日時
             </label>
             <div className="flex flex-col gap-3">
-              <input
-                type="date"
-                value={formData.endDate}
-                onChange={(e) => onFormChange({ endDate: e.target.value })}
-                className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+              {/* 年月日選択 */}
+              <div className="grid grid-cols-3 gap-2">
+                <select
+                  value={endYear}
+                  onChange={(e) =>
+                    handleEndDateChange(
+                      parseInt(e.target.value),
+                      endMonth,
+                      endDay
+                    )
+                  }
+                  className="w-full rounded-lg border border-gray-300 px-2 py-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  {yearOptions.map((year) => (
+                    <option key={year} value={year}>
+                      {year}年
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={endMonth}
+                  onChange={(e) =>
+                    handleEndDateChange(
+                      endYear,
+                      parseInt(e.target.value),
+                      endDay
+                    )
+                  }
+                  className="w-full rounded-lg border border-gray-300 px-2 py-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  {monthOptions.map((month) => (
+                    <option key={month} value={month}>
+                      {month}月
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={endDay}
+                  onChange={(e) =>
+                    handleEndDateChange(
+                      endYear,
+                      endMonth,
+                      parseInt(e.target.value)
+                    )
+                  }
+                  className="w-full rounded-lg border border-gray-300 px-2 py-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  {endDayOptions.map((day) => (
+                    <option key={day} value={day}>
+                      {day}日
+                    </option>
+                  ))}
+                </select>
+              </div>
               {!formData.allDay && (
                 <select
                   value={formData.endTime}
